@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1280, initial-scale=1.0">
+  <title>Auxílio ao Ensino Secundário - Livre-se das Tarefas</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="footer" style="margin:0 auto 0.8rem;max-width:100%;padding:0.6rem 1rem;">
+    <p class="muted">M-Pesa: 851619970 · Titular Maria António Chicavele · suporte@fluxosoftwares.com</p>
+  </div>
+  <header class="topbar">
+    <div class="brand">Livre-se das Tarefas</div>
+    <nav class="navbar">
+      <a href="/index.html">Início</a>
+      <a href="/secondary-school.html">Ensino Secundário</a>
+      <a href="/order.html">Encomendas</a>
+      <a href="/services.html">Serviços</a>
+      <button id="logout" class="ghost auth-only">Terminar sessão</button>
+      <a href="/login.html" class="anon-only">Login</a>
+      <a href="/register.html" class="anon-only">Registo</a>
+    </nav>
+  </header>
+
+  <main class="container" style="max-width:860px;">
+    <section class="card" style="margin-top:1rem;">
+      <h2>Auxílio ao Ensino Secundário</h2>
+      <p class="muted">Taxação automática de <strong>5 MZN por alínea/exercício</strong>.</p>
+      <div id="feedback" class="toast"></div>
+      <form id="secondary-order-form" class="stacked">
+        <label>Disciplina</label>
+        <select name="secondarySubject" required>
+          <option value="matematica">Matemática</option>
+          <option value="fisica">Física</option>
+          <option value="quimica">Química</option>
+          <option value="biologia">Biologia</option>
+          <option value="portugues">Português</option>
+          <option value="ingles">Inglês</option>
+          <option value="historia">História</option>
+          <option value="geografia">Geografia</option>
+          <option value="outra">Outra</option>
+        </select>
+
+        <label>Classe</label>
+        <select name="secondaryClass" required>
+          <option value="8">8ª classe</option>
+          <option value="9">9ª classe</option>
+          <option value="10">10ª classe</option>
+          <option value="11">11ª classe</option>
+          <option value="12">12ª classe</option>
+        </select>
+
+        <label>Número de alíneas/exercícios</label>
+        <input type="number" name="exerciseCount" min="1" required placeholder="Ex.: 10" />
+
+        <label>Fotos dos exercícios propostos</label>
+        <input type="file" name="exerciseFiles" id="exerciseFiles" accept="image/*" multiple required />
+
+        <div class="inline-group">
+          <button type="button" id="simulate-quote" class="ghost">Simular preço</button>
+          <button type="submit" class="primary">Enviar pedido</button>
+        </div>
+      </form>
+      <div id="quote-preview" class="quote"></div>
+    </section>
+  </main>
+
+  <script src="/upload-utils.js"></script>
+  <script>
+    const apiBase = '/api';
+    let authToken = localStorage.getItem('token') || '';
+
+    function syncNav() {
+      document.querySelectorAll('.anon-only').forEach((el) => (el.style.display = authToken ? 'none' : 'inline-flex'));
+      document.querySelectorAll('.auth-only').forEach((el) => (el.style.display = authToken ? 'inline-flex' : 'none'));
+    }
+
+    function showToast(text) {
+      const zone = document.getElementById('feedback');
+      if (zone) {
+        zone.textContent = text;
+        zone.classList.add('visible');
+        setTimeout(() => zone.classList.remove('visible'), 3000);
+      }
+    }
+
+    function requireAuth() {
+      if (!authToken) {
+        showToast('Faça login para continuar.');
+        return false;
+      }
+      return true;
+    }
+
+    document.getElementById('logout')?.addEventListener('click', () => {
+      localStorage.removeItem('token');
+      localStorage.removeItem('role');
+      authToken = '';
+      syncNav();
+      window.location.href = '/login.html';
+    });
+
+    document.getElementById('simulate-quote')?.addEventListener('click', async () => {
+      const form = document.getElementById('secondary-order-form');
+      const raw = new FormData(form);
+      const body = {
+        tipo: 'auxilio_secundario',
+        exercicios: Number(raw.get('exerciseCount') || 0)
+      };
+      try {
+        const res = await fetch(`${apiBase}/orders/quote`, {
+          method: 'POST',
+          headers: authToken ? { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` } : { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Não foi possível calcular');
+        const zone = document.getElementById('quote-preview');
+        zone.innerHTML = `<p><strong>Total estimado:</strong> ${data.total} MZN</p><p>${data.exerciseCount} alíneas × ${data.unitPrice} MZN por alínea.</p>`;
+      } catch (err) {
+        showToast(err.message);
+      }
+    });
+
+    document.getElementById('secondary-order-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!requireAuth()) return;
+      const form = e.target;
+      const raw = new FormData(form);
+      const exerciseCount = Number(raw.get('exerciseCount') || 0);
+      if (exerciseCount <= 0) {
+        showToast('Informe o número de alíneas/exercícios.');
+        return;
+      }
+      const files = document.getElementById('exerciseFiles');
+      if (!files?.files?.length) {
+        showToast('Anexe pelo menos uma foto dos exercícios.');
+        return;
+      }
+
+      const payload = new FormData();
+      payload.set('tipo', 'auxilio_secundario');
+      payload.set('area', String(raw.get('secondarySubject')));
+      payload.set('nivel', `classe_${raw.get('secondaryClass')}`);
+      payload.set('paginas', String(exerciseCount));
+      payload.set('norma', 'N/A');
+      payload.set('complexidade', 'basica');
+      payload.set('urgencia', 'normal');
+      payload.set('prazo_entrega', '');
+      payload.set('descricao', `Disciplina: ${raw.get('secondarySubject')} | Classe: ${raw.get('secondaryClass')}ª`);
+      payload.set('exercicios', String(exerciseCount));
+      Array.from(files.files).forEach((f) => payload.append('exercicios_uploads[]', f));
+
+      const btn = form.querySelector('button[type="submit"]');
+      const progress = window.UploadUtils?.ensureProgressUI(form);
+      try {
+        if (btn) btn.disabled = true;
+        const result = window.UploadUtils
+          ? await window.UploadUtils.uploadWithProgress(`${apiBase}/orders`, {
+              method: 'POST',
+              headers: { Authorization: `Bearer ${authToken}` },
+              body: payload,
+              onProgress: (pct) => window.UploadUtils.setProgress(progress, pct, 'A enviar fotos dos exercícios...')
+            })
+          : { ok: false, data: { message: 'UploadUtils indisponível' } };
+        if (!result.ok) throw new Error(result.data.message || 'Erro ao enviar pedido');
+        showToast('Pedido enviado com sucesso. Fatura emitida.');
+        setTimeout(() => { window.location.href = `/invoice.html?id=${result.data.order_id}`; }, 400);
+      } catch (err) {
+        showToast(err.message);
+      } finally {
+        if (btn) btn.disabled = false;
+        if (progress) window.UploadUtils.hideProgress(progress);
+      }
+    });
+
+    syncNav();
+  </script>
+</body>
+</html>

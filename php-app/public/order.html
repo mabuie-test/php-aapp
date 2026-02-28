@@ -2,7 +2,7 @@
 <html lang="pt">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=1280, initial-scale=1.0">
   <title>Encomendas - Livre-se das Tarefas</title>
   <link rel="stylesheet" href="/styles.css" />
 </head>
@@ -13,6 +13,7 @@
       <a href="/index.html">Início</a>
       <a href="/documents.html" class="auth-only">Faturas e documentos</a>
       <a href="/services.html">Serviços especializados</a>
+      <a href="/secondary-school.html">Ensino Secundário</a>
       <button id="logout" class="ghost auth-only">Terminar sessão</button>
       <a href="/login.html" class="anon-only">Login</a>
       <a href="/register.html" class="anon-only">Registo</a>
@@ -32,66 +33,98 @@
           <option value="tese">Tese</option>
           <option value="resumo">Resumo académico</option>
           <option value="Trabalhos de Campo">Trabalhos de Campo</option>
-<option value="Trabalhos de Pesquisa">Trabalhos de Pesquisa</option>
-<option value="Exames">Exames</option>
-<option value="Relatórios de Estágio">Relatórios de Estágio</option>
+          <option value="Trabalhos de Pesquisa">Trabalhos de Pesquisa</option>
+          <option value="Exames">Exames</option>
+          <option value="auxilio_secundario">Auxílio ao ensino secundário (tarefas)</option>
+          <option value="Relatórios de Estágio">Relatórios de Estágio</option>
         </select>
-        <label>Área científica</label>
-        <select name="area" required>
-          <option value="engenharia">Engenharia</option>
-          <option value="gestao">Gestão</option>
-          <option value="saude">Saúde</option>
-          <option value="direito">Direito</option>
-          <option value="outra">Outra</option>
-        </select>
-        <label>Nível académico</label>
-        <select name="academicLevel">
-          <option value="tecnico">Técnico</option>
-          <option value="licenciatura">Licenciatura</option>
-          <option value="mestrado">Mestrado</option>
-          <option value="doutoramento">Doutoramento</option>
-        </select>
-        <label>Número de páginas</label>
-        <input type="number" name="pages" min="1" required />
-        <label>Norma de formatação</label>
-        <select name="formatting">
-          <option value="APA">APA</option>
-          <option value="ABNT">ABNT</option>
-          <option value="MLA">MLA</option>
-          <option value="Chicago">Chicago</option>
-          <option value="IEEE">IEEE</option>
-        </select>
-        <label>Complexidade</label>
-        <select name="complexity">
-          <option value="basica">Básica</option>
-          <option value="intermedia">Intermédia</option>
-          <option value="avancada">Avançada</option>
-        </select>
-        <label>Urgência</label>
-        <select name="urgency">
-          <option value="normal">Normal</option>
-          <option value="72h">72h</option>
-          <option value="48h">48h</option>
-          <option value="24h">24h</option>
-        </select>
-        <label>Prazo desejado</label>
-        <input type="date" name="deliveryDeadline" />
-        <label>Descrição detalhada</label>
-        <textarea name="description" rows="3"></textarea>
-        <label>Código de afiliado (opcional)</label>
-        <input type="text" name="referralCode" placeholder="Se alguém indicou você, coloque o código aqui" />
-        <div class="inline-group">
-          <label>Tens materiais didáticos fornecidos?</label>
-          <select name="hasMaterials" id="has-materials">
-            <option value="nao">Não</option>
-            <option value="sim">Sim</option>
+
+        <div id="secondary-only-fields" class="nested" style="display:none;">
+          <p class="muted"><strong>Taxação automática:</strong> 5 MZN por alínea/exercício.</p>
+          <label>Disciplina</label>
+          <select id="secondary-subject" name="secondarySubject">
+            <option value="matematica">Matemática</option>
+            <option value="fisica">Física</option>
+            <option value="quimica">Química</option>
+            <option value="biologia">Biologia</option>
+            <option value="portugues">Português</option>
+            <option value="ingles">Inglês</option>
+            <option value="historia">História</option>
+            <option value="geografia">Geografia</option>
+            <option value="outra">Outra</option>
           </select>
+          <label>Classe</label>
+          <select id="secondary-grade" name="secondaryClass">
+            <option value="8">8ª classe</option>
+            <option value="9">9ª classe</option>
+            <option value="10">10ª classe</option>
+            <option value="11">11ª classe</option>
+            <option value="12">12ª classe</option>
+          </select>
+          <label>Número de alíneas/exercícios</label>
+          <input type="number" id="exercise-count" name="exerciseCount" min="1" placeholder="Ex.: 12" />
+          <label>Enviar foto dos exercícios propostos (pode selecionar várias)</label>
+          <input type="file" id="exerciseFiles" name="exercicios_uploads[]" accept="image/*" multiple />
         </div>
-        <div id="materials-extra" class="nested" style="display:none;">
-          <label>Percentagem prevista de uso dos materiais (%)</label>
-          <input type="number" name="materialsUsagePercent" min="0" max="100" />
-          <label>Enviar materiais (pdf, imagens, docx) - pode selecionar vários</label>
-          <input type="file" id="materialsFiles" name="materiais_uploads[]" multiple />
+
+        <div id="default-order-fields">
+          <label>Área científica</label>
+          <select name="area" required>
+            <option value="engenharia">Engenharia</option>
+            <option value="gestao">Gestão</option>
+            <option value="saude">Saúde</option>
+            <option value="direito">Direito</option>
+            <option value="outra">Outra</option>
+          </select>
+          <label>Nível académico</label>
+          <select name="academicLevel">
+            <option value="tecnico">Técnico</option>
+            <option value="licenciatura">Licenciatura</option>
+            <option value="mestrado">Mestrado</option>
+            <option value="doutoramento">Doutoramento</option>
+          </select>
+          <label>Número de páginas</label>
+          <input type="number" id="pages-field" name="pages" min="1" required />
+          <label>Norma de formatação</label>
+          <select name="formatting">
+            <option value="APA">APA</option>
+            <option value="ABNT">ABNT</option>
+            <option value="MLA">MLA</option>
+            <option value="Chicago">Chicago</option>
+            <option value="IEEE">IEEE</option>
+          </select>
+          <label>Complexidade</label>
+          <select name="complexity">
+            <option value="basica">Básica</option>
+            <option value="intermedia">Intermédia</option>
+            <option value="avancada">Avançada</option>
+          </select>
+          <label>Urgência</label>
+          <select name="urgency">
+            <option value="normal">Normal</option>
+            <option value="72h">72h</option>
+            <option value="48h">48h</option>
+            <option value="24h">24h</option>
+          </select>
+          <label>Prazo desejado</label>
+          <input type="date" name="deliveryDeadline" />
+          <label>Descrição detalhada</label>
+          <textarea name="description" rows="3"></textarea>
+          <label>Código de afiliado (opcional)</label>
+          <input type="text" name="referralCode" placeholder="Se alguém indicou você, coloque o código aqui" />
+          <div class="inline-group">
+            <label>Tens materiais didáticos fornecidos?</label>
+            <select name="hasMaterials" id="has-materials">
+              <option value="nao">Não</option>
+              <option value="sim">Sim</option>
+            </select>
+          </div>
+          <div id="materials-extra" class="nested" style="display:none;">
+            <label>Percentagem prevista de uso dos materiais (%)</label>
+            <input type="number" name="materialsUsagePercent" min="0" max="100" />
+            <label>Enviar materiais (pdf, imagens, docx) - pode selecionar vários</label>
+            <input type="file" id="materialsFiles" name="materiais_uploads[]" multiple />
+          </div>
         </div>
         <div class="inline-group">
           <button type="button" id="simulate-quote" class="ghost">Simular preço</button>
@@ -126,6 +159,5 @@
   </footer>
   <script src="/upload-utils.js"></script>
   <script src="/main.js"></script>
-  <script src="/nav-mobile.js"></script>
-</body>
+  </body>
 </html>

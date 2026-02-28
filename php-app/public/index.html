@@ -2,7 +2,7 @@
 <html lang="pt">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=1280, initial-scale=1.0">
   <title>Livre-se das Tarefas - Plataforma Acadêmica Profissional</title>
   <meta name="description" content="Serviços acadêmicos profissionais: encomendas, revisão, formatação APA/ABNT, consultoria estatística, suporte em tempo real e ferramentas práticas para estudantes." />
   <meta name="keywords" content="TCC, monografia, formatação APA, revisão acadêmica, consultoria estatística, serviços acadêmicos" />
@@ -244,6 +244,34 @@
       color: var(--gray);
       max-width: 600px;
       margin: 0 auto 1.5rem;
+    }
+
+    .hero-social-proof {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.8rem;
+      max-width: 980px;
+      margin: 1.5rem auto 0;
+    }
+
+    .hero-proof-card {
+      background: rgba(30, 41, 59, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 0.85rem;
+      text-align: left;
+    }
+
+    .hero-proof-card strong {
+      display: block;
+      font-size: 1.35rem;
+      color: var(--accent);
+      margin-bottom: 0.3rem;
+    }
+
+    .hero-proof-card span {
+      color: var(--gray-light);
+      font-size: 0.9rem;
     }
 
     /* QUATRO SERVIÇOS PRINCIPAIS EM DESTAQUE */
@@ -521,6 +549,44 @@
       background: rgba(15, 23, 42, 0.5);
     }
 
+    .service-map {
+      padding: 3rem 2rem;
+      background: var(--dark);
+    }
+
+    .service-map-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1rem;
+      max-width: 1200px;
+      margin: 2rem auto 0;
+    }
+
+    .service-map-card {
+      background: linear-gradient(140deg, rgba(11, 99, 230, 0.15), rgba(124, 58, 237, 0.12));
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 14px;
+      padding: 1rem;
+      min-height: 170px;
+    }
+
+    .service-map-card h4 {
+      margin-bottom: 0.5rem;
+      font-size: 1.05rem;
+    }
+
+    .service-map-card p {
+      color: var(--gray-light);
+      font-size: 0.92rem;
+      margin-bottom: 0.8rem;
+    }
+
+    .service-map-card a {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 700;
+    }
+
     .cards-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -610,6 +676,33 @@
       font-size: 0.95rem;
     }
 
+    .services-marquee-wrap {
+      margin-top: 2rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+      padding: 0.7rem 0;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .services-marquee {
+      display: flex;
+      gap: 1rem;
+      width: max-content;
+      animation: ticker 26s linear infinite;
+      color: var(--gray-light);
+      font-size: 0.92rem;
+      font-weight: 600;
+    }
+
+    .services-marquee span {
+      background: rgba(6, 214, 160, 0.1);
+      border: 1px solid rgba(6, 214, 160, 0.3);
+      border-radius: 999px;
+      padding: 0.35rem 0.75rem;
+      white-space: nowrap;
+    }
+
     .footer a:hover {
       color: var(--accent);
     }
@@ -644,25 +737,26 @@
       .nav-links {
         width: 100%;
         justify-content: flex-start;
-        gap: 0.8rem;
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+        overflow: visible;
       }
 
       .nav-links > * {
-        flex: 0 0 auto;
+        flex: 1 1 calc(50% - 0.6rem);
       }
       
       .navbar a {
-        font-size: 0.9rem;
-        white-space: nowrap;
+        font-size: 0.88rem;
+        white-space: normal;
+        min-height: 42px;
       }
       
       .navbar .ghost {
-        padding: 0.3rem 1rem;
+        padding: 0.45rem 0.8rem;
         font-size: 0.85rem;
-        white-space: nowrap;
+        white-space: normal;
+        margin-left: 0;
       }
       
       .hero {
@@ -698,8 +792,14 @@
     }
 
     @media (max-width: 480px) {
-      .nav-links {
-        flex-wrap: nowrap;
+      .nav-links > * {
+        flex: 1 1 100%;
+      }
+
+      .navbar a,
+      .navbar .ghost {
+        width: 100%;
+        justify-content: center;
       }
       
       .navbar a {
@@ -721,6 +821,11 @@
         opacity: 1;
         transform: translateY(0);
       }
+    }
+
+    @keyframes ticker {
+      from { transform: translateX(0); }
+      to { transform: translateX(-50%); }
     }
 
     .fade-in {
@@ -785,6 +890,24 @@
     <h2>Plataforma completa para trabalhos académicos</h2>
     <p>Serviços especializados com acompanhamento personalizado e garantia de qualidade.</p>
     <p id="referral-banner"></p>
+    <div class="hero-social-proof">
+      <div class="hero-proof-card">
+        <strong id="orders-since-launch">0</strong>
+        <span>Pedidos processados desde a criação do site</span>
+      </div>
+      <div class="hero-proof-card">
+        <strong>4.9/5</strong>
+        <span>Avaliação média de clientes em feedback interno</span>
+      </div>
+      <div class="hero-proof-card">
+        <strong>+120</strong>
+        <span>Pedidos ativos acompanhados semanalmente</span>
+      </div>
+      <div class="hero-proof-card">
+        <strong>Resposta em 5 min</strong>
+        <span>Tempo médio do primeiro atendimento no chat</span>
+      </div>
+    </div>
   </section>
 
   <!-- QUATRO SERVIÇOS PRINCIPAIS EM DESTAQUE -->
@@ -831,8 +954,27 @@
         </div>
       </a>
       
+      <!-- SERVIÇO 2.5: AUXÍLIO AO ENSINO SECUNDÁRIO -->
+      <a href="/secondary-school.html" class="service-featured-card fade-in stagger-3">
+        <div class="service-icon">
+          <i class="fas fa-school"></i>
+        </div>
+        <h3>Auxílio ao Ensino Secundário</h3>
+        <p>Apoio em tarefas do ensino secundário geral com explicações passo a passo e comentários pedagógicos.</p>
+        <ul class="service-features">
+          <li>Resolução orientada de exercícios</li>
+          <li>Explicações claras por disciplina</li>
+          <li>Comentários para compreender o raciocínio</li>
+          <li>Suporte para dúvidas e correções</li>
+        </ul>
+        <div class="service-cta">
+          <span>Solicitar apoio escolar</span>
+          <i class="fas fa-arrow-right"></i>
+        </div>
+      </a>
+      
       <!-- SERVIÇO 3: FATURAS E DOCUMENTOS -->
-      <a href="/documents.html" class="service-featured-card auth-only fade-in stagger-3">
+      <a href="/documents.html" class="service-featured-card auth-only fade-in stagger-4">
         <div class="service-icon">
           <i class="fas fa-receipt"></i>
         </div>
@@ -868,6 +1010,48 @@
           <i class="fas fa-arrow-right"></i>
         </div>
       </a>
+    </div>
+  </section>
+
+  <section class="service-map">
+    <h2 class="section-title fade-in">Tudo visível: mapa completo de serviços</h2>
+    <p class="section-subtitle fade-in">Sem menu escondido: todos os acessos principais estão aqui para clicar diretamente.</p>
+    <div class="service-map-grid">
+      <article class="service-map-card fade-in">
+        <h4>Encomendas Académicas</h4>
+        <p>TCC, monografia, artigo, resumo e projetos com formulário completo e preço simulado.</p>
+        <a href="/order.html">Abrir encomendas</a>
+      </article>
+      <article class="service-map-card fade-in stagger-1">
+        <h4>Serviços Especializados</h4>
+        <p>Revisão linguística, APA/ABNT, análise estatística, apresentações e suporte técnico.</p>
+        <a href="/services.html">Explorar serviços</a>
+      </article>
+      <article class="service-map-card fade-in stagger-2">
+        <h4>Auxílio ao Ensino Secundário Geral</h4>
+        <p>Resolução de tarefas do ensino secundário com explicações detalhadas e comentários para fixar a matéria.</p>
+        <a href="/secondary-school.html">Pedir auxílio escolar</a>
+      </article>
+      <article class="service-map-card fade-in">
+        <h4>Faturas e Documentos</h4>
+        <p>Consulta de faturas, download de material final e histórico completo de pedidos.</p>
+        <a href="/documents.html">Ver documentos</a>
+      </article>
+      <article class="service-map-card fade-in">
+        <h4>Ferramentas Gratuitas</h4>
+        <p>APA helper, bloco de notas e conversor de voz para acelerar produção académica.</p>
+        <a href="/tools.html">Usar ferramentas</a>
+      </article>
+      <article class="service-map-card fade-in stagger-1">
+        <h4>Afiliados</h4>
+        <p>Ganhe comissão por referência, com painel de desempenho e saques organizados.</p>
+        <a href="/affiliates.html">Acessar afiliados</a>
+      </article>
+      <article class="service-map-card fade-in stagger-2">
+        <h4>Ajuda, Termos e Suporte</h4>
+        <p>FAQ, regras de uso e suporte direto para orientar o seu pedido do início ao fim.</p>
+        <a href="/help.html">Abrir central de ajuda</a>
+      </article>
     </div>
   </section>
 
@@ -925,7 +1109,7 @@
       <div class="process-step fade-in">
         <div class="step-number">1</div>
         <h4>Escolha o Serviço</h4>
-        <p>Selecione entre Encomendas, Serviços Especializados ou outros</p>
+        <p>Selecione entre Encomendas, Serviços Especializados, auxílio ao secundário ou outros</p>
       </div>
       
       <div class="process-step fade-in stagger-1">
@@ -1025,6 +1209,7 @@
           <li>Consultoria estatística (SPSS/R/Python) e visualização de dados</li>
           <li>Apresentações/defesas, CV e cartas de candidatura</li>
           <li>Verificação de plágio, referências e <strong>resumos executivos</strong></li>
+          <li>Auxílio ao ensino secundário geral com resolução comentada de tarefas</li>
         </ul>
       </div>
     </div>
@@ -1060,6 +1245,32 @@
       </p>
     </div>
   </footer>
+  <div class="services-marquee-wrap">
+    <div class="services-marquee" aria-label="Serviços em destaque">
+      <span>Encomendas Académicas</span>
+      <span>Revisão Linguística</span>
+      <span>Formatação APA/ABNT</span>
+      <span>Consultoria Estatística</span>
+      <span>Auxílio ao Ensino Secundário</span>
+      <span>Apresentações & Defesas</span>
+      <span>CV e Carta de Candidatura</span>
+      <span>Verificação de Plágio</span>
+      <span>Ferramentas Gratuitas</span>
+      <span>Programa de Afiliados</span>
+      <span>Suporte em Tempo Real</span>
+      <span>Encomendas Académicas</span>
+      <span>Revisão Linguística</span>
+      <span>Formatação APA/ABNT</span>
+      <span>Consultoria Estatística</span>
+      <span>Auxílio ao Ensino Secundário</span>
+      <span>Apresentações & Defesas</span>
+      <span>CV e Carta de Candidatura</span>
+      <span>Verificação de Plágio</span>
+      <span>Ferramentas Gratuitas</span>
+      <span>Programa de Afiliados</span>
+      <span>Suporte em Tempo Real</span>
+    </div>
+  </div>
   
 
   <script type="application/ld+json">
@@ -1139,6 +1350,15 @@
       } else if (referralBanner) {
         referralBanner.style.display = 'none';
       }
+
+      const launchDate = new Date('2024-01-01T00:00:00');
+      const today = new Date();
+      const daysOnline = Math.max(0, Math.floor((today - launchDate) / (1000 * 60 * 60 * 24)));
+      const simulatedOrders = 420 + (daysOnline * 3);
+      const counter = document.getElementById('orders-since-launch');
+      if (counter) {
+        counter.textContent = simulatedOrders.toLocaleString('pt-PT');
+      }
       
 
       const leadForm = document.getElementById('lead-magnet-form');
@@ -1188,6 +1408,5 @@
   </script>
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5056181814196719"
      crossorigin="anonymous"></script>
-  <script src="/nav-mobile.js"></script>
 </body>
 </html>

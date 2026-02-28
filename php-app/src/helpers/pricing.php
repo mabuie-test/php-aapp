@@ -40,4 +40,18 @@ class Pricing
             'total' => round($total, 2)
         ];
     }
+
+    public static function quoteExercises(int $exerciseCount): array
+    {
+        $unitPrice = (float) Config::get('BASE_PRICE_PER_EXERCISE', 5);
+        $count = max(1, $exerciseCount);
+        $total = $unitPrice * $count;
+        return [
+            'pricingMode' => 'por_exercicio',
+            'unitPrice' => $unitPrice,
+            'exerciseCount' => $count,
+            'total' => round($total, 2)
+        ];
+    }
+
 }
