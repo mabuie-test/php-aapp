@@ -21,6 +21,18 @@ class OrderController
     {
         Auth::requireUser();
         $body = json_decode(file_get_contents('php://input'), true) ?? [];
+
+        $isExercisePricing = (($body['tipo'] ?? '') === 'auxilio_secundario') || !empty($body['exercicios']);
+        if ($isExercisePricing) {
+            $exerciseCount = (int) ($body['exercicios'] ?? 0);
+            if ($exerciseCount <= 0) {
+                Response::json(['message' => 'Informe o número de alíneas/exercícios'], 400);
+                return;
+            }
+            Response::json(Pricing::quoteExercises($exerciseCount));
+            return;
+        }
+
         if (!isset($body['paginas'], $body['nivel'], $body['complexidade'], $body['urgencia'])) {
             Response::json(['message' => 'Dados incompletos'], 400);
             return;
@@ -33,7 +45,11 @@ class OrderController
     {
         $user = Auth::requireUser();
         $data = $_POST;
-        $quote = Pricing::quote((int) ($data['paginas'] ?? 0), $data['nivel'] ?? '', $data['complexidade'] ?? '', $data['urgencia'] ?? '');
+        $exerciseCount = (int) ($data['exercicios'] ?? 0);
+        $isExercisePricing = (($data['tipo'] ?? '') === 'auxilio_secundario') || $exerciseCount > 0;
+        $quote = $isExercisePricing
+            ? Pricing::quoteExercises($exerciseCount)
+            : Pricing::quote((int) ($data['paginas'] ?? 0), $data['nivel'] ?? '', $data['complexidade'] ?? '', $data['urgencia'] ?? '');
 
         $materialsFiles = [];
         if (!empty($_FILES['materiais_uploads']['name'][0])) {
@@ -45,6 +61,22 @@ class OrderController
                 $tmp = $_FILES['materiais_uploads']['tmp_name'][$index] ?? null;
                 if (!$tmp) continue;
                 $safeName = uniqid('mat_') . '-' . preg_replace('/[^a-zA-Z0-9\.\-_]/', '_', $name);
+                $dest = $uploadDir . '/' . $safeName;
+                if (move_uploaded_file($tmp, $dest)) {
+                    $materialsFiles[] = '/uploads/materiais/' . $safeName;
+                }
+            }
+        }
+
+        if (!empty($_FILES['exercicios_uploads']['name'][0])) {
+            $uploadDir = dirname(__DIR__, 2) . '/uploads/materiais';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0775, true);
+            }
+            foreach ($_FILES['exercicios_uploads']['name'] as $index => $name) {
+                $tmp = $_FILES['exercicios_uploads']['tmp_name'][$index] ?? null;
+                if (!$tmp) continue;
+                $safeName = uniqid('ex_') . '-' . preg_replace('/[^a-zA-Z0-9\.\-_]/', '_', $name);
                 $dest = $uploadDir . '/' . $safeName;
                 if (move_uploaded_file($tmp, $dest)) {
                     $materialsFiles[] = '/uploads/materiais/' . $safeName;
@@ -82,11 +114,11 @@ class OrderController
             'tipo' => $data['tipo'] ?? '',
             'area' => $data['area'] ?? '',
             'nivel' => $data['nivel'] ?? '',
-            'paginas' => (int) ($data['paginas'] ?? 0),
+            'paginas' => $isExercisePricing ? max(1, $exerciseCount) : (int) ($data['paginas'] ?? 0),
             'norma' => $data['norma'] ?? null,
             'complexidade' => $data['complexidade'] ?? null,
             'urgencia' => $data['urgencia'] ?? null,
-            'descricao' => $data['descricao'] ?? '',
+            'descricao' => trim(($data['descricao'] ?? '') . ($isExercisePricing ? ("\n\n[AUXÍLIO SECUNDÁRIO] Alíneas/exercícios: " . max(1, $exerciseCount) . ' · Taxa unitária: ' . ($quote['unitPrice'] ?? 5) . ' MZN') : '')),
             'estado' => 'PENDENTE_PAGAMENTO',
             'prazo_entrega' => $data['prazo_entrega'] ?? null,
             'referred_by_code' => $refCode,
