@@ -2,22 +2,32 @@
 <html lang="pt">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=1280, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Encomendas - Livre-se das Tarefas</title>
   <link rel="stylesheet" href="/styles.css" />
 </head>
-<body data-page="orders">
-  <header class="topbar">
-    <div class="brand">Livre-se das Tarefas</div>
-    <nav class="navbar">
-      <a href="/index.html">Início</a>
-      <a href="/documents.html" class="auth-only">Faturas e documentos</a>
-      <a href="/services.html">Serviços especializados</a>
-      <a href="/secondary-school.html">Ensino Secundário</a>
-      <button id="logout" class="ghost auth-only">Terminar sessão</button>
-      <a href="/login.html" class="anon-only">Login</a>
-      <a href="/register.html" class="anon-only">Registo</a>
-    </nav>
+<body class="logged-in" data-page="orders">
+  <header>
+    <div class="header-content">
+      <div class="logo-container">
+        <div class="logo-icon">L</div>
+        <div>
+          <div class="logo-text">Livre-se das Tarefas</div>
+          <div class="tagline">Conhecimento que transforma</div>
+        </div>
+      </div>
+      <nav class="navbar">
+        <div class="nav-links">
+          <a href="/index.html">Início</a>
+          <a href="/documents.html" class="auth-only">Faturas e documentos</a>
+          <a href="/services.html">Serviços especializados</a>
+          <a href="/secondary-school.html">Ensino Secundário</a>
+          <button id="logout" class="ghost auth-only">Terminar sessão</button>
+          <a href="/login.html" class="anon-only">Login</a>
+          <a href="/register.html" class="anon-only">Registo</a>
+        </div>
+      </nav>
+    </div>
   </header>
 
   <main class="container grid-two">

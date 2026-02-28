@@ -1735,7 +1735,7 @@ canvas {
 }
 
 /* ============================================
-   HAMBURGUER MOBILE COMPACTO
+   NAVEGAÇÃO MOBILE (LINKS VISÍVEIS POR PADRÃO)
    ============================================ */
 .mobile-hamburger {
   display: none;
@@ -1758,27 +1758,13 @@ canvas {
 }
 
 @media (max-width: 768px) {
-  .mobile-hamburger { display: block; }
-
-  header {
-    padding-right: 2.8rem;
+  .mobile-hamburger {
+    display: none;
   }
 
   header .navbar,
   header nav.navbar,
   header > nav {
-    display: none;
-    width: 100%;
-  }
-
-  body.navbar-open header {
-    max-height: 100vh;
-    overflow-y: auto;
-  }
-
-  body.navbar-open header .navbar,
-  body.navbar-open header nav.navbar,
-  body.navbar-open header > nav {
     display: flex;
     flex-direction: column;
     gap: 0.55rem;
@@ -1786,23 +1772,23 @@ canvas {
     margin-top: 0.4rem;
   }
 
-  body.navbar-open header .nav-links {
+  header .nav-links {
     width: 100%;
     display: flex;
     flex-direction: column;
     gap: 0.55rem;
   }
 
-  body.navbar-open header .nav-links > * {
+  header .nav-links > * {
     min-width: 0;
     width: 100%;
     flex: 1 1 auto;
   }
 
-  body.navbar-open header .navbar a,
-  body.navbar-open header .navbar .ghost,
-  body.navbar-open header nav a,
-  body.navbar-open header nav button {
+  header .navbar a,
+  header .navbar .ghost,
+  header nav a,
+  header nav button {
     width: 100%;
     justify-content: flex-start;
   }
