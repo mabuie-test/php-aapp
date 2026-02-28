@@ -737,25 +737,26 @@
       .nav-links {
         width: 100%;
         justify-content: flex-start;
-        gap: 0.8rem;
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+        overflow: visible;
       }
 
       .nav-links > * {
-        flex: 0 0 auto;
+        flex: 1 1 calc(50% - 0.6rem);
       }
       
       .navbar a {
-        font-size: 0.9rem;
-        white-space: nowrap;
+        font-size: 0.88rem;
+        white-space: normal;
+        min-height: 42px;
       }
       
       .navbar .ghost {
-        padding: 0.3rem 1rem;
+        padding: 0.45rem 0.8rem;
         font-size: 0.85rem;
-        white-space: nowrap;
+        white-space: normal;
+        margin-left: 0;
       }
       
       .hero {
@@ -791,8 +792,14 @@
     }
 
     @media (max-width: 480px) {
-      .nav-links {
-        flex-wrap: nowrap;
+      .nav-links > * {
+        flex: 1 1 100%;
+      }
+
+      .navbar a,
+      .navbar .ghost {
+        width: 100%;
+        justify-content: center;
       }
       
       .navbar a {
@@ -947,8 +954,27 @@
         </div>
       </a>
       
+      <!-- SERVIÇO 2.5: AUXÍLIO AO ENSINO SECUNDÁRIO -->
+      <a href="/services.html" class="service-featured-card fade-in stagger-3">
+        <div class="service-icon">
+          <i class="fas fa-school"></i>
+        </div>
+        <h3>Auxílio ao Ensino Secundário</h3>
+        <p>Apoio em tarefas do ensino secundário geral com explicações passo a passo e comentários pedagógicos.</p>
+        <ul class="service-features">
+          <li>Resolução orientada de exercícios</li>
+          <li>Explicações claras por disciplina</li>
+          <li>Comentários para compreender o raciocínio</li>
+          <li>Suporte para dúvidas e correções</li>
+        </ul>
+        <div class="service-cta">
+          <span>Solicitar apoio escolar</span>
+          <i class="fas fa-arrow-right"></i>
+        </div>
+      </a>
+      
       <!-- SERVIÇO 3: FATURAS E DOCUMENTOS -->
-      <a href="/documents.html" class="service-featured-card auth-only fade-in stagger-3">
+      <a href="/documents.html" class="service-featured-card auth-only fade-in stagger-4">
         <div class="service-icon">
           <i class="fas fa-receipt"></i>
         </div>
@@ -1002,6 +1028,11 @@
         <a href="/services.html">Explorar serviços</a>
       </article>
       <article class="service-map-card fade-in stagger-2">
+        <h4>Auxílio ao Ensino Secundário Geral</h4>
+        <p>Resolução de tarefas do ensino secundário com explicações detalhadas e comentários para fixar a matéria.</p>
+        <a href="/services.html">Pedir auxílio escolar</a>
+      </article>
+      <article class="service-map-card fade-in">
         <h4>Faturas e Documentos</h4>
         <p>Consulta de faturas, download de material final e histórico completo de pedidos.</p>
         <a href="/documents.html">Ver documentos</a>
@@ -1078,7 +1109,7 @@
       <div class="process-step fade-in">
         <div class="step-number">1</div>
         <h4>Escolha o Serviço</h4>
-        <p>Selecione entre Encomendas, Serviços Especializados ou outros</p>
+        <p>Selecione entre Encomendas, Serviços Especializados, auxílio ao secundário ou outros</p>
       </div>
       
       <div class="process-step fade-in stagger-1">
@@ -1178,6 +1209,7 @@
           <li>Consultoria estatística (SPSS/R/Python) e visualização de dados</li>
           <li>Apresentações/defesas, CV e cartas de candidatura</li>
           <li>Verificação de plágio, referências e <strong>resumos executivos</strong></li>
+          <li>Auxílio ao ensino secundário geral com resolução comentada de tarefas</li>
         </ul>
       </div>
     </div>
@@ -1219,6 +1251,7 @@
       <span>Revisão Linguística</span>
       <span>Formatação APA/ABNT</span>
       <span>Consultoria Estatística</span>
+      <span>Auxílio ao Ensino Secundário</span>
       <span>Apresentações & Defesas</span>
       <span>CV e Carta de Candidatura</span>
       <span>Verificação de Plágio</span>
@@ -1229,6 +1262,7 @@
       <span>Revisão Linguística</span>
       <span>Formatação APA/ABNT</span>
       <span>Consultoria Estatística</span>
+      <span>Auxílio ao Ensino Secundário</span>
       <span>Apresentações & Defesas</span>
       <span>CV e Carta de Candidatura</span>
       <span>Verificação de Plágio</span>
