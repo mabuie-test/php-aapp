@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Serviços e acompanhamento - Livre-se das Tarefas</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body data-page="services">
+  <header class="topbar">
+    <div class="brand">Livre-se das Tarefas</div>
+    <nav class="navbar">
+      <a href="/index.html">Início</a>
+      <a href="/order.html">Encomendas</a>
+      <a href="/documents.html" class="auth-only">Faturas e documentos</a>
+      <button id="logout" class="ghost auth-only">Terminar sessão</button>
+      <a href="/login.html" class="anon-only">Login</a>
+      <a href="/register.html" class="anon-only">Registo</a>
+    </nav>
+  </header>
+
+  <main class="container cards-grid">
+    <section class="card" id="tcc-card">
+      <h3>Acompanhamento de TCC</h3>
+      <p>Orientação na escolha de tema, consultoria, ajuda, correção e formatação.</p>
+      <form id="tcc-form">
+        <label>Nome</label><input name="contactName" required />
+        <label>Email</label><input type="email" name="contactEmail" required />
+        <label>Telefone</label><input name="contactPhone" />
+        <label>Objetivos</label><input name="goals" />
+        <label>Detalhes do projeto</label><textarea name="details" rows="3" required></textarea>
+        <button type="submit">Pedir acompanhamento</button>
+      </form>
+    </section>
+    <section class="card" id="special-card">
+      <h3>Encomendas especiais (eletrónica, programação, electricidade)</h3>
+      <p>Projetos práticos com análise e fatura após acerto com o cliente.</p>
+      <form id="special-form">
+        <label>Nome</label><input name="contactName" required />
+        <label>Email</label><input type="email" name="contactEmail" required />
+        <label>Telefone</label><input name="contactPhone" />
+        <label>Detalhes do trabalho</label><textarea name="details" rows="3" required></textarea>
+        <label>Resultados esperados</label><input name="goals" />
+        <button type="submit">Submeter pedido especial</button>
+      </form>
+    </section>
+    <section class="card" id="service-card">
+      <h3>Serviços especializados</h3>
+      <p class="muted">Selecione o serviço e preencha o formulário para receber uma proposta dedicada.</p>
+      <div class="pill-list">
+        <button type="button" data-service-type="Revisão linguística e normalização">Revisão linguística / Normas</button>
+        <button type="button" data-service-type="Consultoria estatística SPSS/R">Consultoria estatística (SPSS/R)</button>
+        <button type="button" data-service-type="Apresentações e defesas">Apresentações e defesas</button>
+        <button type="button" data-service-type="Currículo e carta de candidatura">CV e carta de candidatura</button>
+        <button type="button" data-service-type="Verificação de plágio e referências">Verificação de plágio e referências</button>
+        <button type="button" data-service-type="Resumos executivos">Resumos executivos</button>
+      </div>
+      <form id="service-form" class="stacked">
+        <label>Serviço</label>
+        <select id="service-type" name="categoria" required>
+          <option value="Revisão linguística e normalização">Revisão linguística e normalização (APA, ABNT, MLA, Chicago, Vancouver, IEEE)</option>
+          <option value="Consultoria estatística SPSS/R">Consultoria estatística (SPSS, R) e visualização de dados</option>
+          <option value="Apresentações e defesas">Preparação de apresentações/defesas (slides e roteiros)</option>
+          <option value="Currículo e carta de candidatura">Criação de CV, carta de candidatura e portfólios</option>
+          <option value="Verificação de plágio e referências">Verificação de plágio e otimização de referências</option>
+          <option value="Resumos executivos">Resumos e sínteses orientadas</option>
+        </select>
+        <label>Norma preferida</label>
+        <select name="norma_preferida">
+          <option value="">Qualquer</option>
+          <option value="APA">APA</option>
+          <option value="ABNT">ABNT</option>
+          <option value="MLA">MLA</option>
+          <option value="Chicago">Chicago</option>
+          <option value="Vancouver">Vancouver</option>
+          <option value="IEEE">IEEE</option>
+        </select>
+        <label>Software / stack de preferência</label>
+        <select name="software_preferido">
+          <option value="">Indiferente</option>
+          <option value="SPSS">SPSS</option>
+          <option value="R">R</option>
+          <option value="Python">Python</option>
+          <option value="PowerPoint/Canva">PowerPoint/Canva</option>
+        </select>
+        <label>Nome</label><input name="contact_name" required />
+        <label>Email</label><input type="email" name="contact_email" required />
+        <label>Telefone</label><input name="contact_phone" />
+        <label>Detalhes do pedido</label><textarea name="detalhes" rows="3" required></textarea>
+        <label>Anexo opcional (materiais de apoio, CV base, dados)</label>
+        <input type="file" name="attachment" />
+        <button type="submit">Submeter serviço</button>
+      </form>
+    </section>
+    <section class="card wide">
+      <h3>Meus serviços especializados</h3>
+      <div id="service-list" class="list"></div>
+    </section>
+  </main>
+
+  <div id="confirm-dialog" class="modal hidden">
+    <div class="modal-content">
+      <p id="confirm-text"></p>
+      <div class="inline-group">
+        <button id="confirm-cancel" class="ghost">Cancelar</button>
+        <button id="confirm-accept" class="primary">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <p class="muted">Chamadas/WhatsApp +258 851 619 970 · suporte@fluxosoftwares.com</p>
+  </footer>
+  <script src="/upload-utils.js"></script>
+  <script src="/main.js"></script>
+  <script src="/nav-mobile.js"></script>
+</body>
+</html>

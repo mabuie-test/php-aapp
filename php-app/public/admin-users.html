@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Utilizadores - Admin</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body class="page" data-page="users">
+  <header class="topbar">
+    <div class="brand">Admin · Utilizadores</div>
+    <nav>
+      <a href="/admin.html">Dashboard</a>
+      <a href="/admin-orders.html">Encomendas</a>
+      <a href="/admin-services.html">Serviços</a>
+      <a href="/admin-metrics.html">Métricas</a>
+      <button id="logout" class="ghost">Terminar sessão</button>
+    </nav>
+  </header>
+  <main class="content">
+    <section class="card">
+      <h1>Gestão de utilizadores</h1>
+      <p class="muted">Ativar/desativar contas, ver códigos de indicação e IPs na auditoria.</p>
+      <div id="admin-users" class="list"></div>
+    </section>
+  </main>
+  <div id="confirm-dialog" class="modal hidden">
+    <div class="modal-content">
+      <p id="confirm-text"></p>
+      <div class="inline-group">
+        <button id="confirm-cancel" class="ghost">Cancelar</button>
+        <button id="confirm-accept" class="primary">Confirmar</button>
+      </div>
+    </div>
+  </div>
+  <footer class="footer"><p class="muted">© 2024 Fluxosoftwares</p></footer>
+  <script src="/admin.js"></script>
+  <script src="/nav-mobile.js"></script>
+</body>
+</html>

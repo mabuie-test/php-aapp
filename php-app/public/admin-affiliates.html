@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes" />
+  <title>Afiliados - Admin | Livre-se das Tarefas</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    /* Garantia de grid 2 colunas em ecrãs grandes */
+    .admin-affiliates-page .grid-two {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+    @media (max-width: 900px) {
+      .admin-affiliates-page .grid-two {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body class="page admin-affiliates-page" data-page="affiliates">
+  <header class="topbar">
+    <div class="header-content">
+      <div class="logo-container">
+        <div class="logo-icon">L</div>
+        <div>
+          <div class="logo-text">Admin · Afiliados</div>
+          <div class="tagline">Gestão de comissões e pagamentos</div>
+        </div>
+      </div>
+      <nav class="navbar">
+        <div class="nav-links">
+          <a href="/admin.html">Dashboard</a>
+          <a href="/admin-orders.html">Encomendas</a>
+          <a href="/admin-users.html">Utilizadores</a>
+          <a href="/admin-metrics.html">Métricas</a>
+          <button id="logout" class="ghost">Terminar sessão</button>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <main class="content grid-two">
+    <!-- Card 1: Comissões -->
+    <section class="card">
+      <h1>Comissões de afiliados</h1>
+
+      <div id="affiliate-controls">
+        <input id="af-search" type="search" placeholder="Procurar por código, email, encomenda ou estado (ex: PENDENTE, APROVADA)" />
+        <button id="export-csv" class="ghost tiny-ghost">Exportar CSV</button>
+        <button id="refresh" class="ghost tiny-ghost">Atualizar</button>
+      </div>
+
+      <div id="admin-affiliate-summary" class="pill small-muted"></div>
+      
+      <div class="table-responsive">
+        <div id="admin-commissions" class="list" style="margin-top:10px;"></div>
+      </div>
+
+      <h3 style="margin-top:24px;">🏆 Top indicados</h3>
+      <div id="admin-affiliate-leaders" class="list" style="background: rgba(6,214,160,0.05);"></div>
+    </section>
+
+    <!-- Card 2: Pagamentos -->
+    <section class="card">
+      <h1>Pagamentos de afiliados</h1>
+      <div class="table-responsive">
+        <div id="admin-payouts" class="list"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p class="muted">© 2024 Fluxosoftwares · suporte@fluxosoftwares.com</p>
+  </footer>
+
+  <script>
+    (function(){
+      const apiBase = '/api';
+      const token = localStorage.getItem('token') || '';
+      const authHeader = token ? { 'Authorization': 'Bearer ' + token } : {};
+
+      function formatMoney(v){ return Number(v).toFixed(2); }
+      function el(tag, cls, html){ const e = document.createElement(tag); if(cls) e.className=cls; if(html!==undefined) e.innerHTML = html; return e; }
+
+      async function loadAll(){
+        await Promise.all([loadCommissions(), loadPayouts()]);
+      }
+
+      async function loadCommissions() {
+        const target = document.getElementById('admin-commissions');
+        const summaryEl = document.getElementById('admin-affiliate-summary');
+        const leadersEl = document.getElementById('admin-affiliate-leaders');
+
+        target.innerHTML = '<div style="padding:1rem; text-align:center;">A carregar comissões…</div>';
+
+        try {
+          const res = await fetch(apiBase + '/admin/commissions', { headers: authHeader });
+          const contentType = res.headers.get('content-type');
+          if (!contentType || !contentType.includes('application/json')) {
+            const text = await res.text();
+            console.error('Resposta não JSON:', text.substring(0,200));
+            throw new Error('Resposta inválida do servidor');
+          }
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.message || 'Erro a carregar');
+
+          const rows = data.commissions || [];
+          const leaders = data.leaders || [];
+
+          let totalCount = rows.length;
+          let totalValue = rows.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
+
+          summaryEl.innerHTML = `📊 Registos: <strong>${totalCount}</strong> · Valor total (todos estados): <strong>${formatMoney(totalValue)} MZN</strong>`;
+
+          let html = '<table class="aff-table"><thead><tr>'
+            + '<th>ID</th><th>Referente</th><th>Beneficiário</th><th>Encomenda</th><th>Valor (MZN)</th><th>Estado</th><th>Payout</th><th>Criada</th>'
+            + '</tr></thead><tbody>';
+
+          rows.forEach(r => {
+            const refLabel = r.referrer_name
+              ? `${escapeHtml(r.referrer_name)} (${escapeHtml(r.referrer_code)})`
+              : escapeHtml(r.referrer_code || '—');
+
+            const payoutCell = r.payout_id
+              ? `${escapeHtml(r.payout_id)} <span class="badge badge-${(r.payout_status||'').toLowerCase()}">${escapeHtml(r.payout_status || '')}</span>`
+              : '—';
+
+            let statusClass = 'badge';
+            if (r.status === 'APROVADA') statusClass += ' badge-aprovada';
+            else if (r.status === 'PENDENTE') statusClass += ' badge-pendente';
+            else if (r.status === 'PAGO') statusClass += ' badge-pago';
+            else statusClass += ' badge-rejeitado';
+
+            html += `<tr data-id="${r.id}">
+              <td>${r.id}</td>
+              <td>${refLabel}</td>
+              <td>${escapeHtml(r.beneficiary_email)}</td>
+              <td>#${escapeHtml(r.order_id)}</td>
+              <td class="right" style="font-weight:600;">${formatMoney(r.amount)}</td>
+              <td><span class="${statusClass}">${escapeHtml(r.status)}</span></td>
+              <td>${payoutCell}</td>
+              <td>${escapeHtml(r.created_at || '').split(' ')[0]}</td>
+            </tr>`;
+          });
+
+          html += '</tbody></table>';
+          target.innerHTML = html;
+
+          if (leaders.length === 0) {
+            leadersEl.innerHTML = '<div class="muted" style="padding:1rem;">Nenhum referrer com comissões aprovadas</div>';
+          } else {
+            let lhtml = '<ol style="padding-left:1.5rem; margin:0.8rem 0;">';
+            leaders.forEach(l => {
+              lhtml += `<li><strong>${escapeHtml(l.referrer_name || l.referrer_code)}</strong> — ${formatMoney(l.total_approved)} MZN (${l.qty_approved || 0} transacções)</li>`;
+            });
+            lhtml += '</ol>';
+            leadersEl.innerHTML = lhtml;
+          }
+
+        } catch (e) {
+          target.innerHTML = `<div class="error" style="padding:1rem; color:var(--danger);">Erro: ${e.message}</div>`;
+          console.error('loadCommissions error:', e);
+        }
+      }
+
+      async function loadPayouts() {
+        const elP = document.getElementById('admin-payouts');
+        elP.innerHTML = '<div style="padding:1rem; text-align:center;">A carregar pagamentos…</div>';
+
+        try {
+          const res = await fetch(apiBase + '/admin/payouts', { headers: authHeader });
+          const contentType = res.headers.get('content-type');
+          if (!contentType || !contentType.includes('application/json')) {
+            const text = await res.text();
+            console.error('Resposta não JSON:', text.substring(0,200));
+            throw new Error('Resposta inválida do servidor');
+          }
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.message || 'Erro');
+
+          const rows = data.payouts || [];
+
+          if (!rows.length) {
+            elP.innerHTML = '<div class="muted" style="padding:1rem;">Nenhum pedido de levantamento.</div>';
+            return;
+          }
+
+          let html = '<table class="aff-table"><thead><tr><th>ID</th><th>Afiliado</th><th>Valor</th><th>Método</th><th>Estado</th><th>Dest. M-Pesa</th><th>Acções</th></tr></thead><tbody>';
+
+          rows.forEach(r => {
+            const nameEmail = r.name
+              ? `${escapeHtml(r.name)} &lt;${escapeHtml(r.email)}&gt;`
+              : escapeHtml(r.email || '');
+
+            let statusClass = 'badge';
+            if (r.status === 'APROVADO' || r.status === 'PAGO') statusClass += ' badge-aprovada';
+            else if (r.status === 'SOLICITADO' || r.status === 'PENDENTE') statusClass += ' badge-pendente';
+            else statusClass += ' badge-rejeitado';
+
+            const approveBtn = `<button class="approve-btn" data-id="${r.id}">Aprovar</button>`;
+            const rejectBtn = `<button class="reject-btn" data-id="${r.id}">Rejeitar</button>`;
+
+            const actions = (r.status === 'APROVADO' || r.status === 'PAGO')
+              ? `<span class="badge badge-aprovada">${escapeHtml(r.status)}</span>`
+              : approveBtn + ' ' + rejectBtn;
+
+            html += `<tr data-pid="${r.id}">
+              <td>${r.id}</td>
+              <td>${nameEmail}</td>
+              <td class="right" style="font-weight:600;">${formatMoney(r.valor)}</td>
+              <td>${escapeHtml(r.metodo)}</td>
+              <td><span class="${statusClass}">${escapeHtml(r.status)}</span></td>
+              <td>${escapeHtml(r.mpesa_destino || '—')}</td>
+              <td>${actions}</td>
+            </tr>`;
+          });
+
+          html += '</tbody></table>';
+          elP.innerHTML = html;
+
+          // Anexar eventos
+          document.querySelectorAll('.approve-btn').forEach(b => {
+            b.addEventListener('click', async (e) => {
+              const id = e.currentTarget.dataset.id;
+              await updatePayout(id, 'APROVADO');
+            });
+          });
+          document.querySelectorAll('.reject-btn').forEach(b => {
+            b.addEventListener('click', async (e) => {
+              const id = e.currentTarget.dataset.id;
+              await updatePayout(id, 'REJEITADO');
+            });
+          });
+
+        } catch (e) {
+          elP.innerHTML = `<div class="error" style="padding:1rem; color:var(--danger);">Erro: ${e.message}</div>`;
+          console.error('loadPayouts error:', e);
+        }
+      }
+
+      async function updatePayout(payoutId, status){
+        if (!confirm(`Confirma ${status} para o pedido #${payoutId}?`)) return;
+        try {
+          const form = new FormData();
+          form.set('payout_id', payoutId);
+          form.set('status', status);
+          const res = await fetch(apiBase + '/admin/payouts/update', {
+            method: 'POST',
+            headers: authHeader,
+            body: form
+          });
+          const data = await res.json();
+          if (!res.ok) { alert(data.message || 'Falha'); return; }
+
+          const row = document.querySelector(`tr[data-pid="${payoutId}"]`);
+          if (row) {
+            row.querySelectorAll('button').forEach(b=> b.remove());
+            const statusCell = row.querySelector('td:nth-child(5)');
+            if (statusCell) {
+              statusCell.innerHTML = `<span class="badge badge-${status.toLowerCase()}">${status}</span>`;
+            }
+          }
+          await loadPayouts();
+          await loadCommissions();
+        } catch (e) {
+          alert('Erro ao executar a operação');
+          console.error(e);
+        }
+      }
+
+      function attachSearch(){
+        const input = document.getElementById('af-search');
+        if (!input) return;
+        input.addEventListener('input', (e)=>{
+          const q = (e.target.value || '').toLowerCase();
+          const table = document.querySelector('#admin-commissions table');
+          if (!table) return;
+          Array.from(table.tBodies[0].rows).forEach(row=>{
+            const text = (row.textContent || '').toLowerCase();
+            row.style.display = text.includes(q) ? '' : 'none';
+          });
+        });
+      }
+
+      document.getElementById('export-csv')?.addEventListener('click', async ()=>{
+        try {
+          const res = await fetch(apiBase + '/admin/commissions', { headers: authHeader });
+          const data = await res.json();
+          const rows = data.commissions || [];
+          const header = ['id','referrer_code','referrer_name','referrer_email','beneficiary_email','order_id','amount','status','payout_id','created_at'];
+          const csv = [header.join(',')];
+          rows.forEach(r=>{
+            const vals = [
+              r.id, r.referrer_code||'', r.referrer_name||'', r.referrer_email||'', r.beneficiary_email||'', r.order_id||'', r.amount||'', r.status||'', r.payout_id||'', r.created_at||''
+            ];
+            csv.push(vals.map(v => `"${String(v).replace(/"/g,'""')}"`).join(','));
+          });
+          const blob = new Blob([csv.join('\n')], {type: 'text/csv'});
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = 'affiliate_commissions.csv';
+          a.click();
+        } catch (e) {
+          alert('Erro a exportar CSV');
+          console.error(e);
+        }
+      });
+
+      document.getElementById('refresh')?.addEventListener('click', loadAll);
+      document.getElementById('logout')?.addEventListener('click', ()=>{
+        localStorage.removeItem('token');
+        localStorage.removeItem('role');
+        window.location.href = '/login.html';
+      });
+
+      function escapeHtml(s){
+        if(s===null||s===undefined) return '';
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      }
+
+      attachSearch();
+      loadAll();
+    })();
+  </script>
+  <script src="/nav-mobile.js"></script>
+</body>
+</html>

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fatura - Livre-se das Tarefas</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="invoice-page">
+  <header>
+    <h1>Fatura detalhada</h1>
+    <div class="navbar">
+      <a href="/">Voltar ao painel</a>
+      <button id="logout" class="ghost">Terminar sessão</button>
+    </div>
+  </header>
+  <div class="container narrow" id="invoice-container">
+    <div class="card">
+      <div class="split">
+        <h3 id="invoice-title">Fatura</h3>
+        <div class="actions">
+          <button id="refresh-invoice" type="button">Atualizar</button>
+          <button id="back-dashboard" type="button">Voltar</button>
+          <button id="download-pdf" type="button">Baixar PDF</button>
+        </div>
+      </div>
+      <div id="invoice-body" class="invoice-box"></div>
+    </div>
+    <div class="card">
+      <h3>Submeter comprovativo</h3>
+      <p class="muted">Envie o recibo de M-Pesa para acelerar a validação.</p>
+      <form id="proof-form" class="stacked-actions">
+        <input type="file" name="comprovativo" id="proof-file" accept="image/*,application/pdf" required />
+        <button type="submit" class="primary">Enviar comprovativo</button>
+      </form>
+    </div>
+  </div>
+  <footer class="footer">
+    <div>
+      <strong>Contactos</strong>
+      <p>Chamadas & WhatsApp: <a href="tel:+258851619970">+258 851 619 970</a></p>
+      <p>Email: <a href="mailto:suporte@fluxosoftwares.com">suporte@fluxosoftwares.com</a></p>
+    </div>
+    <div>
+      <p><a href="https://wa.me/258851619970" target="_blank">WhatsApp</a> · <a href="https://www.instagram.com" target="_blank">Instagram</a> · <a href="https://www.facebook.com" target="_blank">Facebook</a></p>
+      <p class="muted">© 2024 Fluxosoftwares</p>
+    </div>
+  </footer>
+  <script src="/upload-utils.js"></script>
+  <script src="invoice.js"></script>
+  <script src="/nav-mobile.js"></script>
+</body>
+</html>

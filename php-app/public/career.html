@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="pt">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Carreira & Estágios | Livre-se das Tarefas</title>
+    <link rel="stylesheet" href="/styles.css"/>
+    <style>
+        .wrap { max-width: 1000px; margin: 2rem auto; padding: 0 1rem; }
+        .card { background: rgba(15, 30, 50, 0.8); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; padding: 1.8rem; margin-bottom: 1.8rem; }
+        h1 { font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem; background: linear-gradient(135deg, #fff, #cbd5e0); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .btn { display: inline-block; padding: 0.7rem 1.8rem; border-radius: 40px; font-weight: 600; border: none; cursor: pointer; transition: all 0.2s; }
+        .btn.primary { background: linear-gradient(135deg, #0b63e6, #7c3aed); color: white; }
+        .btn.primary:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(11,99,230,0.4); }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .feedback-box { display: none; padding: 1rem 1.5rem; border-radius: 12px; margin-bottom: 1.5rem; font-weight: 500; }
+        .feedback-box.success { background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #d1fae5; }
+        .feedback-box.error { background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; color: #fee2e2; }
+        .feedback-box.info { background: rgba(59, 130, 246, 0.15); border: 1px solid #3b82f6; color: #dbeafe; }
+        .login-prompt { text-align: center; padding: 2rem; background: rgba(239,68,68,0.08); border-radius: 16px; margin: 2rem 0; border: 1px solid rgba(239,68,68,0.3); }
+        .login-prompt a { margin-top: 1rem; display: inline-block; }
+        .file-hint { font-size: 0.85rem; color: #94a3b8; margin-top: 0.2rem; }
+        .inline-group { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+    </style>
+</head>
+<body>
+    <main class="wrap">
+        <h1>🎓 Serviços de Carreira & Estágio</h1>
+        <p class="muted" style="margin-bottom: 2rem;">CV, carta de apresentação e relatório de estágio com faturação automática e acompanhamento.</p>
+
+        <div id="global-feedback" class="feedback-box"></div>
+
+        <!-- === FORMULÁRIO CV === -->
+        <section class="card">
+            <h3>📄 CV Profissional — 250 MT</h3>
+            <form id="cv-form" enctype="multipart/form-data">
+                <input type="hidden" name="service_type" value="CV">
+                <label>Nome completo *</label>
+                <input type="text" name="name" required>
+                <label>WhatsApp</label>
+                <input type="text" name="whatsapp" placeholder="84XXXXXXX">
+                <label>E-mail profissional *</label>
+                <input type="email" name="email" required>
+                <label>Resumo profissional / observações</label>
+                <textarea name="notes" rows="3" placeholder="Formação, experiência, objectivos..."></textarea>
+                <div class="inline-group">
+                    <button type="submit" class="btn primary">📥 Submeter pedido (250 MT)</button>
+                </div>
+            </form>
+        </section>
+
+        <!-- === FORMULÁRIO CARTA DE APRESENTAÇÃO === -->
+        <section class="card">
+            <h3>✉️ Carta de Apresentação — 200 MT</h3>
+            <form id="cover-form" enctype="multipart/form-data">
+                <input type="hidden" name="service_type" value="CoverLetter">
+                <label>Nome completo *</label>
+                <input type="text" name="name" required>
+                <label>WhatsApp</label>
+                <input type="text" name="whatsapp">
+                <label>E-mail profissional *</label>
+                <input type="email" name="email" required>
+                <label>Motivo / empresa / vaga</label>
+                <textarea name="notes" rows="3" placeholder="Para qual oportunidade deseja a carta?"></textarea>
+                <div class="inline-group">
+                    <button type="submit" class="btn primary">📥 Submeter pedido (200 MT)</button>
+                </div>
+            </form>
+        </section>
+
+        <!-- === FORMULÁRIO RELATÓRIO DE ESTÁGIO === -->
+        <section class="card">
+            <h3>📘 Relatório de Estágio — 950 MT</h3>
+            <form id="report-form" enctype="multipart/form-data">
+                <input type="hidden" name="service_type" value="InternshipReport">
+                <label>Nome completo *</label>
+                <input type="text" name="name" required>
+                <label>Instituição de ensino</label>
+                <input type="text" name="institution">
+                <label>Nome do tutor / supervisor</label>
+                <input type="text" name="tutor">
+                <label>Duração do estágio</label>
+                <input type="text" name="duration" placeholder="Ex: 3 meses, 120h">
+                <label>WhatsApp</label>
+                <input type="text" name="whatsapp">
+                <label>E-mail profissional *</label>
+                <input type="email" name="email" required>
+                <label>Observações / requisitos específicos</label>
+                <textarea name="notes" rows="4" placeholder="Tema, normas pretendidas, conteúdo obrigatório..."></textarea>
+                <label>📎 Evidências / materiais de apoio (máx 10MB cada)</label>
+                <input type="file" name="evidence_files[]" multiple accept=".jpg,.jpeg,.png,.pdf,.doc,.docx">
+                <div class="file-hint">Aceite: JPG, PNG, PDF, DOC, DOCX. Pelo menos 1 ficheiro obrigatório.</div>
+                <div class="inline-group" style="margin-top: 1.5rem;">
+                    <button type="submit" class="btn primary">📥 Submeter pedido (950 MT)</button>
+                </div>
+            </form>
+        </section>
+
+        <!-- AVISO PARA UTILIZADORES NÃO AUTENTICADOS -->
+        <div id="login-prompt" class="login-prompt" style="display: none;">
+            <h3 style="color: #f87171;">⚠️ Acesso restrito</h3>
+            <p>Para solicitar serviços de carreira, inicie sessão ou crie uma conta.</p>
+            <a href="/login.html" class="btn primary" style="background: #ef4444;">Fazer Login</a>
+            <a href="/register.html" class="btn ghost" style="margin-left: 0.8rem; border-color: #ef4444; color: #fecaca;">Registar</a>
+        </div>
+    </main>
+
+    <script>
+        (function() {
+            "use strict";
+
+            const apiBase = '/api';
+            const token = localStorage.getItem('token') || '';
+
+            // ---------- UTILITÁRIOS ----------
+            function showFeedback(message, type = 'info') {
+                const el = document.getElementById('global-feedback');
+                if (!el) return;
+                el.textContent = message;
+                el.className = 'feedback-box ' + type;
+                el.style.display = 'block';
+                if (type === 'success') {
+                    setTimeout(() => { el.style.display = 'none'; }, 8000);
+                }
+            }
+
+            function disableButton(btn, disable = true, text = 'Enviar') {
+                if (!btn) return;
+                btn.disabled = disable;
+                btn.textContent = disable ? '⏳ Enviando...' : text;
+            }
+
+            // ---------- VERIFICAÇÃO DE AUTENTICAÇÃO ----------
+            function isAuthenticated() {
+                return token && token !== 'null' && token !== 'undefined' && token.length > 10;
+            }
+
+            if (!isAuthenticated()) {
+                document.getElementById('login-prompt').style.display = 'block';
+                document.querySelectorAll('form').forEach(f => f.style.display = 'none');
+                showFeedback('🔐 Por favor, faça login para continuar.', 'error');
+            }
+
+            // ---------- FUNÇÃO PRINCIPAL DE SUBMISSÃO ----------
+            async function submitCareerForm(formEl) {
+                const submitBtn = formEl.querySelector('button[type="submit"]');
+                const originalText = submitBtn?.textContent || 'Submeter';
+
+                try {
+                    disableButton(submitBtn, true, originalText);
+
+                    // 1. Validações específicas
+                    const formData = new FormData(formEl);
+                    const serviceType = formData.get('service_type');
+
+                    if (serviceType === 'InternshipReport') {
+                        const fileInput = formEl.querySelector('input[name="evidence_files[]"]');
+                        if (!fileInput || fileInput.files.length === 0) {
+                            showFeedback('❌ Para relatório de estágio, envie pelo menos um ficheiro de evidência.', 'error');
+                            disableButton(submitBtn, false, originalText);
+                            return;
+                        }
+                    }
+
+                    // 2. Requisição
+                    const response = await fetch(`${apiBase}/career/order`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}` },
+                        body: formData
+                    });
+
+                    const responseText = await response.text();
+                    let json;
+                    try {
+                        json = JSON.parse(responseText);
+                    } catch (e) {
+                        console.error('Resposta não JSON:', responseText.substring(0, 200));
+                        throw new Error('O servidor devolveu uma resposta inválida. Contacte o suporte.');
+                    }
+
+                    if (!response.ok) {
+                        throw new Error(json.message || json.error || `Erro ${response.status}`);
+                    }
+
+                    // 3. Sucesso
+                    showFeedback(`✅ ${json.message || 'Pedido criado!'} Fatura: ${json.invoice_number} · ${json.valor_total} MZN`, 'success');
+                    formEl.reset();
+
+                    if (json.order_id) {
+                        setTimeout(() => {
+                            window.location.href = `/invoice.html?id=${json.order_id}`;
+                        }, 2500);
+                    }
+
+                } catch (error) {
+                    showFeedback('❌ ' + error.message, 'error');
+                    console.error('Submit error:', error);
+                } finally {
+                    disableButton(submitBtn, false, originalText);
+                }
+            }
+
+            // ---------- INICIALIZAR EVENTOS ----------
+            document.addEventListener('DOMContentLoaded', () => {
+                if (!isAuthenticated()) return;
+
+                const cvForm = document.getElementById('cv-form');
+                const coverForm = document.getElementById('cover-form');
+                const reportForm = document.getElementById('report-form');
+
+                if (cvForm) cvForm.addEventListener('submit', (e) => { e.preventDefault(); submitCareerForm(cvForm); });
+                if (coverForm) coverForm.addEventListener('submit', (e) => { e.preventDefault(); submitCareerForm(coverForm); });
+                if (reportForm) reportForm.addEventListener('submit', (e) => { e.preventDefault(); submitCareerForm(reportForm); });
+            });
+
+        })();
+    </script>
+  <script src="/nav-mobile.js"></script>
+</body>
+</html>

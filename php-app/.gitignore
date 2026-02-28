@@ -1,0 +1,10 @@
+*.zip
+*.apk
+*.rar
+*.exe
+*.sql
+*.log
+.env
+.htaccess
+node_modules/
+vendor/

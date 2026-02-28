@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Programa de Afiliados - Livre-se das Tarefas</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body class="page">
+  <header class="topbar">
+    <div class="brand">Livre-se das Tarefas · Afiliados</div>
+    <nav class="navbar">
+      <a href="/index.html">Início</a>
+      <a href="/order.html" class="auth-only">Encomendas</a>
+      <a href="/documents.html" class="auth-only">Faturas</a>
+      <button id="logout" class="ghost auth-only">Terminar sessão</button>
+      <a href="/login.html" class="anon-only">Login</a>
+      <a href="/register.html" class="anon-only">Registo</a>
+    </nav>
+  </header>
+
+  <main class="content narrow">
+    <section class="card wide affiliate" id="affiliate-panel">
+      <h1>O meu programa de afiliados</h1>
+      <p class="muted">Divulgue o link, acompanhe saldo disponível, levantamentos e comissões validadas.</p>
+    </section>
+  </main>
+
+  <div id="confirm-dialog" class="modal hidden">
+    <div class="modal-content">
+      <p id="confirm-text"></p>
+      <div class="inline-group">
+        <button id="confirm-cancel" class="ghost">Cancelar</button>
+        <button id="confirm-accept" class="primary">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer"><p class="muted">© 2024 Fluxosoftwares</p></footer>
+  <script src="/main.js"></script>
+  <script src="/nav-mobile.js"></script>
+</body>
+</html>

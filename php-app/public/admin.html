@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes" />
+  <title>Painel Admin - Livre-se das Tarefas</title>
+  <!-- Font Awesome 6 (CDN gratuita) – ícones sem alterar nada no layout original -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    /* ===== ESTILO EXCLUSIVO DO ADMIN – APENAS ÍCONES E AJUSTE FINO, SEM ALTERAR NADA ORIGINAL ===== */
+
+    /* ÍCONES NO HEADER – CABEM PERFEITAMENTE SEM QUEBRAR LINHA */
+    .navbar .nav-links {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.5rem; /* reduzido apenas o necessário */
+    }
+    .navbar a i,
+    .navbar .ghost i {
+      margin-right: 0.2rem;
+      font-size: 0.8rem;   /* mesmo tamanho do texto */
+      vertical-align: middle;
+    }
+    .navbar .ghost {
+      padding: 0.3rem 0.7rem;
+      font-size: 0.8rem;
+      border-width: 1.5px;
+      margin-left: 0.2rem;
+    }
+    .navbar a {
+      padding: 0.2rem 0;
+      font-size: 0.8rem;
+    }
+
+    /* CARD DE BOAS‑VINDAS – ÍCONE ALINHADO PERFEITAMENTE, NÃO SOBREPÕE */
+    .card h1 {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 0.5rem;
+    }
+    .card h1 i {
+      font-size: 1.6rem;   /* equilibrado com o título */
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    /* CARDS DE ACESSO – ÍCONE E TÍTULO NA MESMA LINHA, SEM AUMENTAR O CARD */
+    .card.link-card h3 {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 0;
+      margin-bottom: 0.3rem;
+    }
+    .card.link-card h3 i {
+      font-size: 1.1rem;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    /* FOOTER – ÍCONES SEM AUMENTAR ESPAÇAMENTO */
+    .footer strong i {
+      margin-right: 0.3rem;
+      font-size: 0.9rem;
+    }
+    .footer a i {
+      margin-right: 0.2rem;
+      font-size: 0.85rem;
+      vertical-align: middle;
+    }
+
+    /* PADDING DINÂMICO – GARANTE QUE HEADER NUNCA TAPA CONTEÚDO */
+    body {
+      transition: padding-top 0.2s ease;
+    }
+
+
+    /* TERMINAL DE SUPORTE ALINHADO AO PADRÃO DOS CARDS */
+    .support-terminal {
+      width: 100%;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: linear-gradient(135deg, #0f234a, #0c1c36);
+    }
+    .support-terminal .card-header h3 {
+      margin: 0;
+    }
+    .support-terminal .chat-board {
+      min-height: 280px;
+      max-height: 420px;
+    }
+  </style>
+</head>
+<body class="page admin-page" data-page="dashboard">
+  <!-- HEADER ORIGINAL – APENAS ADICIONADOS ÍCONES, MESMA ESTRUTURA -->
+  <header class="topbar">
+    <div class="header-content">
+      <div class="logo-container">
+        <div class="logo-icon">L</div>
+        <div>
+          <div class="logo-text">Admin · Dashboard</div>
+          <div class="tagline">Gestão completa da plataforma</div>
+        </div>
+      </div>
+      <nav class="navbar">
+        <div class="nav-links">
+          <a href="/help.html"><i class="fas fa-circle-question"></i> Ajuda</a>
+          <button id="logout" class="ghost"><i class="fas fa-sign-out-alt"></i> Sair</button>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <!-- MAIN COM CARDS – ESTRUTURA ORIGINAL, ÍCONES INSERIDOS -->
+  <main class="content cards-grid">
+    <section class="card">
+      <h1><i class="fas fa-tachometer-alt"></i> Administração segmentada</h1>
+      <p class="muted">Clique para aceder às páginas dedicadas. Cada módulo abre separado para manter o painel organizado.</p>
+    </section>
+
+    <a class="card link-card" href="/admin-orders.html">
+      <h3><i class="fas fa-shopping-cart"></i> Gestão de encomendas</h3>
+      <p class="muted">Validar pagamentos, ver materiais, entregar ficheiros finais.</p>
+    </a>
+
+    <a class="card link-card" href="/admin-services.html">
+      <h3><i class="fas fa-cogs"></i> Serviços especializados</h3>
+      <p class="muted">Revisões, estatísticas, apresentações, CVs, plágio e resumos.</p>
+    </a>
+
+    <a class="card link-card" href="/admin-users.html">
+      <h3><i class="fas fa-users"></i> Utilizadores e auditoria</h3>
+      <p class="muted">Ativar/pausar contas, registar logins e IPs.</p>
+    </a>
+
+    <a class="card link-card" href="/admin-affiliates.html">
+      <h3><i class="fas fa-handshake"></i> Afiliados</h3>
+      <p class="muted">Comissões, levantamentos e ranking de referências.</p>
+    </a>
+
+
+    <a class="card link-card" href="/admin-leads.html">
+      <h3><i class="fas fa-bullhorn"></i> Leads de Marketing</h3>
+      <p class="muted">Leads captados no lead magnet com origem e interesse.</p>
+    </a>
+
+
+    <a class="card link-card" href="/admin-promotions.html">
+      <h3><i class="fas fa-envelope-open-text"></i> Campanhas de Email</h3>
+      <p class="muted">Envio promocional em massa para contas registadas.</p>
+    </a>
+
+    <a class="card link-card" href="/admin-metrics.html">
+      <h3><i class="fas fa-chart-line"></i> Métricas e dashboards</h3>
+      <p class="muted">Gráficos de receita, estados e serviços.</p>
+    </a>
+
+    <a class="card link-card" href="/admin-chat.html">
+      <h3><i class="fas fa-comments"></i> Estação de trabalho</h3>
+      <p class="muted">Mensagens internas com anexos associados às encomendas.</p>
+    </a>
+
+
+    <button class="card link-card" id="open-support-terminal" type="button">
+      <h3><i class="fas fa-headset"></i> Terminal de atendimento ao cliente</h3>
+      <p class="muted">Abrir central de atendimento (chat, transferência, anexos e rating).</p>
+    </button>
+
+  </main>
+
+  <div id="support-modal" class="modal hidden" aria-hidden="true">
+    <div class="modal-content support-terminal" style="max-width:1200px;width:96%;">
+      <div class="card-header">
+        <h3><i class="fas fa-headset"></i> Terminal de atendimento ao cliente</h3>
+        <div class="inline-group">
+          <select id="support-session-filter">
+            <option value="">Todas</option>
+            <option value="open">Abertas</option>
+            <option value="waiting_rating">Aguardando avaliação</option>
+            <option value="closed">Encerradas</option>
+          </select>
+          <button class="ghost" id="support-refresh">Atualizar</button>
+          <button class="ghost" id="close-support-terminal">Fechar</button>
+        </div>
+      </div>
+      <div class="support-grid">
+        <aside>
+          <div id="support-sessions" class="list"></div>
+        </aside>
+        <div>
+          <div id="support-rating-preview" class="quote muted" style="margin-bottom:.7rem;display:none"></div>
+          <div class="inline-group" style="margin-bottom:.7rem">
+            <button id="support-claim" class="btn btn-primary">Assumir atendimento</button>
+            <select id="support-transfer-agent"></select>
+            <button id="support-transfer" class="ghost">Transferir</button>
+            <button id="support-close" class="ghost">Finalizar atendimento</button>
+          </div>
+          <div id="support-messages" class="chat-board"></div>
+          <div class="chat-compose">
+            <textarea id="support-reply" rows="2" placeholder="Responder cliente..."></textarea>
+            <div class="inline-group">
+              <input type="file" id="support-attachment" />
+              <button id="support-send" class="btn btn-primary">Enviar resposta</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- FOOTER ORIGINAL COM ÍCONES -->
+  <footer class="footer">
+    <div>
+      <strong><i class="fas fa-phone-alt"></i> Contacto directo</strong>
+      <p><a href="tel:+258851619970"><i class="fas fa-phone"></i> +258 851 619 970</a></p>
+      <p><a href="mailto:suporte@fluxosoftwares.com"><i class="fas fa-envelope"></i> suporte@fluxosoftwares.com</a></p>
+    </div>
+    <div>
+      <strong><i class="fas fa-share-alt"></i> Redes</strong>
+      <p>
+        <a href="https://wa.me/258851619970" target="_blank"><i class="fab fa-whatsapp"></i> WhatsApp</a> · 
+        <a href="https://www.instagram.com" target="_blank"><i class="fab fa-instagram"></i> Instagram</a> · 
+        <a href="https://www.facebook.com" target="_blank"><i class="fab fa-facebook"></i> Facebook</a>
+      </p>
+      <p class="muted">© 2024 Fluxosoftwares</p>
+    </div>
+  </footer>
+
+  <script src="/upload-utils.js"></script>
+  <script src="/admin.js"></script>
+  <script src="/admin-support.js"></script>
+  <script>
+    // ===== AJUSTE INTELIGENTE DO PADDING-TOP =====
+    // NUNCA DEIXA O CONTEÚDO ESCONDIDO ATRÁS DO HEADER
+    (function() {
+      'use strict';
+
+      function adjustPadding() {
+        const header = document.querySelector('header');
+        const body = document.body;
+        if (!header) return;
+
+        // Calcula altura real do header (offsetHeight inclui border e padding)
+        const headerHeight = header.offsetHeight;
+        // Pequena margem de segurança (2px) para não colar
+        const paddingTop = headerHeight + 2;
+
+        // Aplica apenas se diferente do valor atual
+        if (parseInt(body.style.paddingTop) !== paddingTop) {
+          body.style.paddingTop = paddingTop + 'px';
+        }
+      }
+
+      // Executa em todos os momentos críticos
+      window.addEventListener('load', adjustPadding);
+      window.addEventListener('resize', adjustPadding);
+      document.addEventListener('DOMContentLoaded', adjustPadding);
+
+      // Se o DOM já estiver pronto, executa
+      if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        setTimeout(adjustPadding, 10);
+      }
+
+      // Observa mudanças no header (classe logged-in, conteúdo dinâmico)
+      const header = document.querySelector('header');
+      if (header) {
+        const observer = new MutationObserver(adjustPadding);
+        observer.observe(header, { 
+          attributes: true, 
+          childList: true, 
+          subtree: true,
+          attributeFilter: ['class', 'style']
+        });
+      }
+
+      // Observa mudanças no body (adição da classe logged-in)
+      const bodyObserver = new MutationObserver(adjustPadding);
+      bodyObserver.observe(document.body, { 
+        attributes: true, 
+        attributeFilter: ['class'] 
+      });
+    })();
+
+    // Garantir classe logged-in (reforço, pois admin.js já faz isso)
+    (function() {
+      const token = localStorage.getItem('token');
+      if (token) {
+        document.body.classList.add('logged-in');
+      }
+    })();
+  </script>
+  <script src="/nav-mobile.js"></script>
+</body>
+</html>

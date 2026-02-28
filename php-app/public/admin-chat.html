@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Estação interna - Admin</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body class="page" data-page="chat">
+  <header class="topbar">
+    <div class="brand">Admin · Estação</div>
+    <nav>
+      <a href="/admin.html">Dashboard</a>
+      <a href="/admin-orders.html">Encomendas</a>
+      <a href="/admin-metrics.html">Métricas</a>
+      <button id="logout" class="ghost">Terminar sessão</button>
+    </nav>
+  </header>
+
+  <main class="content chat-shell">
+    <!-- Sidebar (threads / filtros) -->
+    <aside class="chat-sidebar card" id="chat-sidebar">
+      <div class="sidebar-top">
+        <h3>Estação — Mensagens</h3>
+        <div class="sidebar-controls">
+          <input id="chat-order" type="number" placeholder="Filtrar por encomenda # (opcional)" />
+          <div class="inline-group">
+            <button id="chat-refresh" class="ghost">Atualizar</button>
+            <button id="sidebar-toggle" class="ghost">☰</button>
+          </div>
+        </div>
+        <input id="chat-search" placeholder="Procurar mensagens..." />
+      </div>
+
+      <div id="admin-threads" class="list" aria-live="polite">
+        <!-- Preenchido por admin.js / admin-chat.js -->
+      </div>
+
+      <div class="sidebar-footer muted">Filtrar por encomenda ou pesquisar texto. Clique numa thread para focar.</div>
+    </aside>
+
+    <!-- Painel principal -->
+    <section class="chat-panel card">
+      <div class="chat-header">
+        <div>
+          <h2 id="chat-title">Estação de trabalho</h2>
+          <p id="chat-sub" class="muted">Chat interno com anexos, filtrável por encomenda.</p>
+        </div>
+        <div class="header-actions">
+          <!-- O botão refresh é o mesmo esperado por admin.js -->
+          <!-- Mantemos o id #chat-refresh no sidebar também -->
+        </div>
+      </div>
+
+      <div id="admin-chat" class="chat-board" role="log" aria-live="polite">
+        <!-- Mensagens carregadas aqui (id preservado para compatibilidade com admin.js) -->
+      </div>
+
+      <div id="chat-controls" class="compose card-small">
+        <div class="compose-left">
+          <textarea id="chat-message" rows="2" placeholder="Escreva uma nota interna (Shift+Enter = nova linha)"></textarea>
+          <div class="compose-row">
+            <label class="file-attach">
+              <input id="chat-file" type="file" />
+              Anexar ficheiro
+            </label>
+            <div id="file-preview" class="file-preview muted small"></div>
+          </div>
+        </div>
+
+        <div class="compose-right">
+          <div class="inline-group">
+            <!-- Mantemos id chat-order (reaproveitado como filtro/associação) -->
+            <input id="chat-order-assoc" type="number" placeholder="Assoc. encomenda (opcional)" />
+            <button id="chat-send" class="primary">Enviar</button>
+          </div>
+          <div id="typing-indicator" class="muted small" aria-hidden="false"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer"><p class="muted">© 2024 Fluxosoftwares</p></footer>
+
+  <!-- Mantemos admin.js (não removas) para preservar backend logic -->
+  <script src="/upload-utils.js"></script>
+  <script src="/admin.js"></script>
+  <!-- script de melhoria apenas: não sobrescreve funções do admin.js; usa loadAdminChat/sendAdminChat se existirem -->
+  <script src="/admin-chat.js"></script>
+  <script src="/nav-mobile.js"></script>
+</body>
+</html>

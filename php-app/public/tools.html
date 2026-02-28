@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Ferramentas úteis — Livre-se</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body class="page tools-page">
+  <header class="topbar">
+    <div class="brand">Ferramentas Úteis</div>
+    <nav><a href="/index.html">Início</a> · <a href="/services.html">Serviços</a> · <a href="/help.html">Ajuda</a></nav>
+  </header>
+
+  <main class="tools">
+    <section class="card">
+      <h2>Conversores e serviços externos</h2>
+      <div class="list">
+        <a href="https://www.ilovepdf.com/pt" target="_blank" rel="noopener" data-tool="ilovepdf">iLovePDF — Conversor / compressão / PDF</a>
+        <a href="https://www.pdf24.org/" target="_blank" rel="noopener" data-tool="pdf24">PDF24 — Conversor e voz->texto PDF</a>
+        <a href="https://max.ai/" target="_blank" rel="noopener" data-tool="maxai">MaxAI — OCR / reconhecimento de texto</a>
+      </div>
+      <p class="muted">Ao abrir uma destas páginas iremos registar a utilização para métricas internas (anonimamente se não estiveres logado).</p>
+    </section>
+
+    <section class="card">
+      <h2>Ferramentas internas</h2>
+      <div class="internal">
+        <a href="/tools/notes.html" class="btn" data-tool="minhas_notes">📒 As Minhas Notas</a>
+        <a href="/tools/apa.html" class="btn" data-tool="formatacao_apa">📚 Formatação APA (6/7)</a>
+        <a href="/tools/converter-voz.html" class="btn" data-tool="voz_para_texto">🎤 Conversor Voz→Texto (externo integrado)</a>
+      </div>
+      <p class="muted">As ferramentas internas abaixo já estão disponíveis dentro da plataforma para uso imediato.</p>
+    </section>
+
+    <section class="card">
+      <h2>Privacidade & tracking</h2>
+      <p class="muted">Apenas registamos que uma ferramenta foi usada (tool id). Não guardamos conteúdos de ficheiros. Para utilizadores autenticados o evento ficará associado à conta.</p>
+    </section>
+  </main>
+
+  <footer class="footer"><p class="muted">© Livre-se das Tarefas</p></footer>
+
+  <script>
+    const token = localStorage.getItem('token') || '';
+    async function track(tool) {
+      try {
+        await fetch('/api/tools/track', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: 'Bearer ' + token } : {})
+          },
+          body: JSON.stringify({ tool })
+        });
+      } catch (e) { /* tracking é não intrusivo — falhas são silenciosas */ }
+    }
+
+    document.querySelectorAll('[data-tool]').forEach(el => {
+      el.addEventListener('click', (ev) => {
+        const tool = el.getAttribute('data-tool') || 'unknown';
+        // para links externos queremos registar antes de sair; usamos navigator.sendBeacon quando possível
+        if (navigator.sendBeacon && el.tagName.toLowerCase() === 'a') {
+          try {
+            const payload = JSON.stringify({ tool });
+            navigator.sendBeacon('/api/tools/track', new Blob([payload], { type: 'application/json' }));
+          } catch (e) {
+            track(tool);
+          }
+        } else {
+          // chamada assíncrona normal
+          track(tool);
+        }
+      });
+    });
+  </script>
+  <script src="/nav-mobile.js"></script>
+</body>
+</html>

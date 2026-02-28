@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Documentos e Faturas - Livre-se das Tarefas</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="document-page">
+  <header>
+    <h1>Minhas Faturas e Documentos</h1>
+    <div class="navbar">
+      <a href="/" class="ghost">Voltar ao painel</a>
+      <a class="anon-only" href="/login.html">Login</a>
+      <a class="anon-only" href="/register.html">Registo</a>
+      <button id="logout" class="ghost auth-only">Terminar sessão</button>
+    </div>
+  </header>
+
+  <section class="container cards-grid">
+    <div class="card wide">
+      <div class="card-header">
+        <div>
+          <h3>Faturas dedicadas</h3>
+          <p class="muted">Veja cada fatura em nova página, baixe PDF e acompanhe estados em tempo real.</p>
+        </div>
+        <button id="refresh-invoices" class="ghost">Atualizar</button>
+      </div>
+      <div id="invoice-collection" class="list"></div>
+    </div>
+    <div class="card wide">
+      <div class="card-header">
+        <div>
+          <h3>Documentos finais enviados pelo admin</h3>
+          <p class="muted">Somente aparecem quando a fatura está paga e o pedido concluído.</p>
+        </div>
+        <button id="refresh-docs" class="ghost">Atualizar</button>
+      </div>
+      <div id="documents-collection" class="list"></div>
+    </div>
+    <div class="card wide">
+      <div class="card-header">
+        <div>
+          <h3>Feedback e notas</h3>
+          <p class="muted">Avalie o trabalho entregue, informe a nota obtida e converse com o admin.</p>
+        </div>
+        <button id="refresh-feedback" class="ghost">Atualizar</button>
+      </div>
+      <div id="feedback-collection" class="list"></div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div>
+      <strong>Contactos</strong>
+      <p>Chamadas & WhatsApp: <a href="tel:+258851619970">+258 851 619 970</a></p>
+      <p>Email: <a href="mailto:suporte@fluxosoftwares.com">suporte@fluxosoftwares.com</a></p>
+    </div>
+    <div>
+      <p><a href="https://wa.me/258851619970" target="_blank">WhatsApp</a> · <a href="https://www.instagram.com" target="_blank">Instagram</a> · <a href="https://www.facebook.com" target="_blank">Facebook</a></p>
+      <p class="muted">© 2024 Fluxosoftwares</p>
+    </div>
+  </footer>
+
+  <div id="confirm-overlay" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-body">
+        <h4 id="confirm-title">Aviso</h4>
+        <p id="confirm-text" class="muted"></p>
+      </div>
+      <div class="modal-actions">
+        <button id="confirm-cancel" class="ghost">Fechar</button>
+        <button id="confirm-ok">Ok</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/upload-utils.js"></script>
+  <script src="documents.js"></script>
+  <script src="/nav-mobile.js"></script>
+</body>
+</html>

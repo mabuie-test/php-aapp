@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Registo - Livre-se das Tarefas</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="auth-page">
+  <header>
+    <h1>Criar conta na Livre-se das Tarefas</h1>
+    <div class="navbar">
+      <a href="/">Voltar ao site</a>
+      <a class="anon-only" href="/login.html">Já tem conta? Entre aqui</a>
+      <button id="logout" class="ghost auth-only">Terminar sessão</button>
+    </div>
+  </header>
+  <div class="container narrow">
+    <div class="card">
+      <h3>Registo</h3>
+      <p id="referral-indicator" class="muted hidden"></p>
+      <form id="signup-form">
+        <label>Nome</label>
+        <input type="text" name="name" required />
+        <label>Email</label>
+        <input type="email" name="email" required />
+        <label>Password</label>
+        <input type="password" name="password" required />
+        <label class="checkbox-row">
+          <input type="checkbox" name="terms" required />
+          <span>Li e aceito os <a href="/terms.html" target="_blank">Termos e Condições</a></span>
+        </label>
+        <button type="submit">Criar conta</button>
+      </form>
+    </div>
+  </div>
+  <footer class="footer">
+    <div>
+      <strong>Contacto</strong>
+      <p>WhatsApp/Chamadas: <a href="tel:+258851619970">+258 851 619 970</a></p>
+      <p>Email: <a href="mailto:suporte@fluxosoftwares.com">suporte@fluxosoftwares.com</a></p>
+    </div>
+    <div>
+      <p><a href="https://wa.me/258851619970" target="_blank">WhatsApp</a> · <a href="https://www.instagram.com" target="_blank">Instagram</a> · <a href="https://www.facebook.com" target="_blank">Facebook</a></p>
+      <p class="muted">© 2024 Fluxosoftwares</p>
+    </div>
+  </footer>
+  <script src="auth.js"></script>
+  <script src="/nav-mobile.js"></script>
+</body>
+</html>

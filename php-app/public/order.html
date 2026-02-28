@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Encomendas - Livre-se das Tarefas</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body data-page="orders">
+  <header class="topbar">
+    <div class="brand">Livre-se das Tarefas</div>
+    <nav class="navbar">
+      <a href="/index.html">Início</a>
+      <a href="/documents.html" class="auth-only">Faturas e documentos</a>
+      <a href="/services.html">Serviços especializados</a>
+      <button id="logout" class="ghost auth-only">Terminar sessão</button>
+      <a href="/login.html" class="anon-only">Login</a>
+      <a href="/register.html" class="anon-only">Registo</a>
+    </nav>
+  </header>
+
+  <main class="container grid-two">
+    <section class="card wide">
+      <h2>Nova Encomenda</h2>
+      <div id="feedback" class="toast"></div>
+      <form id="order-form" class="stacked">
+        <label>Tipo de trabalho</label>
+        <select name="workType" required>
+          <option value="artigo">Artigo académico</option>
+          <option value="relatorio">Relatório técnico</option>
+          <option value="monografia">Monografia</option>
+          <option value="tese">Tese</option>
+          <option value="resumo">Resumo académico</option>
+          <option value="Trabalhos de Campo">Trabalhos de Campo</option>
+<option value="Trabalhos de Pesquisa">Trabalhos de Pesquisa</option>
+<option value="Exames">Exames</option>
+<option value="Relatórios de Estágio">Relatórios de Estágio</option>
+        </select>
+        <label>Área científica</label>
+        <select name="area" required>
+          <option value="engenharia">Engenharia</option>
+          <option value="gestao">Gestão</option>
+          <option value="saude">Saúde</option>
+          <option value="direito">Direito</option>
+          <option value="outra">Outra</option>
+        </select>
+        <label>Nível académico</label>
+        <select name="academicLevel">
+          <option value="tecnico">Técnico</option>
+          <option value="licenciatura">Licenciatura</option>
+          <option value="mestrado">Mestrado</option>
+          <option value="doutoramento">Doutoramento</option>
+        </select>
+        <label>Número de páginas</label>
+        <input type="number" name="pages" min="1" required />
+        <label>Norma de formatação</label>
+        <select name="formatting">
+          <option value="APA">APA</option>
+          <option value="ABNT">ABNT</option>
+          <option value="MLA">MLA</option>
+          <option value="Chicago">Chicago</option>
+          <option value="IEEE">IEEE</option>
+        </select>
+        <label>Complexidade</label>
+        <select name="complexity">
+          <option value="basica">Básica</option>
+          <option value="intermedia">Intermédia</option>
+          <option value="avancada">Avançada</option>
+        </select>
+        <label>Urgência</label>
+        <select name="urgency">
+          <option value="normal">Normal</option>
+          <option value="72h">72h</option>
+          <option value="48h">48h</option>
+          <option value="24h">24h</option>
+        </select>
+        <label>Prazo desejado</label>
+        <input type="date" name="deliveryDeadline" />
+        <label>Descrição detalhada</label>
+        <textarea name="description" rows="3"></textarea>
+        <label>Código de afiliado (opcional)</label>
+        <input type="text" name="referralCode" placeholder="Se alguém indicou você, coloque o código aqui" />
+        <div class="inline-group">
+          <label>Tens materiais didáticos fornecidos?</label>
+          <select name="hasMaterials" id="has-materials">
+            <option value="nao">Não</option>
+            <option value="sim">Sim</option>
+          </select>
+        </div>
+        <div id="materials-extra" class="nested" style="display:none;">
+          <label>Percentagem prevista de uso dos materiais (%)</label>
+          <input type="number" name="materialsUsagePercent" min="0" max="100" />
+          <label>Enviar materiais (pdf, imagens, docx) - pode selecionar vários</label>
+          <input type="file" id="materialsFiles" name="materiais_uploads[]" multiple />
+        </div>
+        <div class="inline-group">
+          <button type="button" id="simulate-quote" class="ghost">Simular preço</button>
+          <button type="submit" class="primary">Calcular e Encomendar</button>
+        </div>
+      </form>
+      <div id="quote-preview" class="quote"></div>
+    </section>
+    <section class="card wide">
+      <h2>As minhas encomendas</h2>
+      <div id="orders-list" class="list"></div>
+      <div class="list" id="notifications-list"></div>
+    </section>
+    <section class="card wide affiliate" id="affiliate-panel">
+      <h2>Programa de afiliados</h2>
+      <p class="muted">Partilhe o seu link para ganhar 18% em cada encomenda concluída pelos seus convidados.</p>
+    </section>
+  </main>
+
+  <div id="confirm-dialog" class="modal hidden">
+    <div class="modal-content">
+      <p id="confirm-text"></p>
+      <div class="inline-group">
+        <button id="confirm-cancel" class="ghost">Cancelar</button>
+        <button id="confirm-accept" class="primary">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <p class="muted">M-Pesa: 851619970 · Titular Maria António Chicavele · suporte@fluxosoftwares.com</p>
+  </footer>
+  <script src="/upload-utils.js"></script>
+  <script src="/main.js"></script>
+  <script src="/nav-mobile.js"></script>
+</body>
+</html>

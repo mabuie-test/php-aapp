@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login - Livre-se das Tarefas</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="auth-page">
+  <header>
+    <div class="header-content">
+      <div class="logo-container">
+        <div class="logo-icon">L</div>
+        <div>
+          <div class="logo-text">Livre-se das Tarefas</div>
+          <div class="tagline">Conhecimento que transforma</div>
+        </div>
+      </div>
+      <nav class="navbar">
+        <div class="nav-links">
+          <a href="/">Voltar ao site</a>
+          <a class="anon-only" href="/register.html">Ainda não tem conta? Registe-se</a>
+          <button id="logout" class="ghost auth-only">Terminar sessão</button>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <div class="container narrow">
+    <div class="card">
+      <h3 style="margin-bottom:1.5rem;">🔐 Entrar na sua conta</h3>
+      <form id="signin-form">
+        <label>Email</label>
+        <input type="email" name="email" required />
+        <label>Password</label>
+        <input type="password" name="password" required />
+        <p class="muted" style="margin:0.5rem 0 1rem;">
+          <a href="/reset.html">Esqueceu a palavra-passe?</a>
+        </p>
+        <label class="checkbox-row" style="margin-bottom:1.2rem;">
+          <input type="checkbox" name="terms" required />
+          <span>Li e aceito os <a href="/terms.html" target="_blank">Termos e Condições</a></span>
+        </label>
+        <button type="submit" class="btn-primary" style="width:100%;">Entrar</button>
+      </form>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div>
+      <strong>Contacto</strong>
+      <p>WhatsApp/Chamadas: <a href="tel:+258851619970">+258 851 619 970</a></p>
+      <p>Email: <a href="mailto:suporte@fluxosoftwares.com">suporte@fluxosoftwares.com</a></p>
+    </div>
+    <div>
+      <p><a href="https://wa.me/258851619970" target="_blank">WhatsApp</a> · <a href="https://www.instagram.com" target="_blank">Instagram</a> · <a href="https://www.facebook.com" target="_blank">Facebook</a></p>
+      <p class="muted">© 2024 Fluxosoftwares</p>
+    </div>
+  </footer>
+
+  <script src="auth.js"></script>
+  <script src="/nav-mobile.js"></script>
+</body>
+</html>

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Encomendas - Admin | Livre-se das Tarefas</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    /* ===== CORES NOS LINKS DO HEADER – SEM ALTERAR DIMENSÕES ===== */
+    .navbar a {
+      transition: color 0.2s ease;
+    }
+    .navbar a:hover {
+      color: var(--accent); /* #06d6a0 – destaque suave */
+    }
+    /* Link da página actual (Encomendas) com cor primária e indicador activo */
+    .navbar a[href="/admin-orders.html"] {
+      color: var(--primary); /* #0b63e6 */
+      font-weight: 600;
+    }
+    .navbar a[href="/admin-orders.html"]::after {
+      width: 100% !important;        /* barra inferior sempre visível */
+      background: var(--primary) !important;
+    }
+    /* Garantia de que o header não aumenta de altura – tudo já gerido pelo CSS global */
+    @media (max-width: 768px) {
+      /* Ajustes apenas de responsividade – mantém cores */
+      .navbar a[href="/admin-orders.html"] {
+        font-weight: 600;
+      }
+    }
+  </style>
+</head>
+<body class="page" data-page="orders">
+  <!-- HEADER ORIGINAL – MESMA ESTRUTURA, APENAS CORES ADICIONADAS VIA CSS -->
+  <header class="topbar">
+    <div class="header-content">
+      <div class="logo-container">
+        <div class="logo-icon">L</div>
+        <div>
+          <div class="logo-text">Admin · Encomendas</div>
+          <div class="tagline">Gestão de pedidos e entregas</div>
+        </div>
+      </div>
+      <nav class="navbar">
+        <div class="nav-links">
+          <a href="/admin.html">Dashboard</a>
+          <a href="/admin-orders.html">Encomendas</a>
+          <a href="/admin-services.html">Serviços</a>
+          <a href="/admin-users.html">Utilizadores</a>
+          <a href="/admin-metrics.html">Métricas</a>
+          <button id="logout" class="ghost">Terminar sessão</button>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <!-- CONTEÚDO PRINCIPAL (INALTERADO) -->
+  <main class="content">
+    <section class="card">
+      <h1>Gestão de encomendas</h1>
+      <p>Veja estados, materiais e finalize entregas. Cada ação pede confirmação com diálogo estilizado.</p>
+      <div id="admin-feedback" class="toast"></div>
+      <div id="admin-orders" class="grid"></div>
+    </section>
+    <section class="card">
+      <h2>Auditoria rápida</h2>
+      <div id="admin-audits" class="list"></div>
+    </section>
+    <section class="card">
+      <h2>Feedback dos clientes</h2>
+      <p class="muted">Avaliações, notas obtidas e comentários ficam reunidos aqui.</p>
+      <div id="admin-feedback-list" class="list"></div>
+    </section>
+  </main>
+
+  <!-- MODAL DE CONFIRMAÇÃO (INALTERADO) -->
+  <div id="confirm-dialog" class="modal hidden">
+    <div class="modal-content">
+      <p id="confirm-text"></p>
+      <div class="inline-group">
+        <button id="confirm-cancel" class="ghost">Cancelar</button>
+        <button id="confirm-accept" class="primary">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <p class="muted">© 2024 Fluxosoftwares</p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="/admin.js"></script>
+  <script>
+    // Ajuste dinâmico do padding-top para header nunca cobrir conteúdo (reforço)
+    (function() {
+      function adjustPadding() {
+        const header = document.querySelector('header');
+        const body = document.body;
+        if (header) {
+          const headerHeight = header.offsetHeight;
+          body.style.paddingTop = (headerHeight + 2) + 'px';
+        }
+      }
+      window.addEventListener('load', adjustPadding);
+      window.addEventListener('resize', adjustPadding);
+      document.addEventListener('DOMContentLoaded', adjustPadding);
+      const observer = new MutationObserver(adjustPadding);
+      const header = document.querySelector('header');
+      if (header) observer.observe(header, { attributes: true, childList: true, subtree: true });
+    })();
+  </script>
+  <script src="/nav-mobile.js"></script>
+</body>
+</html>
