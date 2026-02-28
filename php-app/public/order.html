@@ -34,6 +34,7 @@
           <option value="Trabalhos de Campo">Trabalhos de Campo</option>
 <option value="Trabalhos de Pesquisa">Trabalhos de Pesquisa</option>
 <option value="Exames">Exames</option>
+<option value="auxilio_secundario">Auxílio ao ensino secundário (tarefas)</option>
 <option value="Relatórios de Estágio">Relatórios de Estágio</option>
         </select>
         <label>Área científica</label>
@@ -52,7 +53,15 @@
           <option value="doutoramento">Doutoramento</option>
         </select>
         <label>Número de páginas</label>
-        <input type="number" name="pages" min="1" required />
+        <input type="number" id="pages-field" name="pages" min="1" required />
+
+        <div id="exercise-pricing-box" class="nested" style="display:none;">
+          <p class="muted"><strong>Taxação automática:</strong> 5 MZN por alínea/exercício.</p>
+          <label>Número de alíneas/exercícios</label>
+          <input type="number" id="exercise-count" name="exerciseCount" min="1" placeholder="Ex.: 12" />
+          <label>Enviar foto dos exercícios propostos (pode selecionar várias)</label>
+          <input type="file" id="exerciseFiles" name="exercicios_uploads[]" accept="image/*" multiple />
+        </div>
         <label>Norma de formatação</label>
         <select name="formatting">
           <option value="APA">APA</option>

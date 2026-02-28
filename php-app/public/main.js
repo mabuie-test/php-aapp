@@ -126,6 +126,28 @@ if (logout) {
 
 const orderForm = document.getElementById('order-form');
 const materialsToggle = document.getElementById('has-materials');
+const workTypeField = document.querySelector('select[name="workType"]');
+const pagesField = document.getElementById('pages-field');
+const exerciseBox = document.getElementById('exercise-pricing-box');
+const exerciseCountField = document.getElementById('exercise-count');
+
+function syncOrderMode() {
+  const isExerciseMode = workTypeField?.value === 'auxilio_secundario';
+  if (exerciseBox) exerciseBox.style.display = isExerciseMode ? 'block' : 'none';
+  if (exerciseCountField) {
+    exerciseCountField.required = !!isExerciseMode;
+    if (!isExerciseMode) exerciseCountField.value = '';
+  }
+  if (pagesField) {
+    if (isExerciseMode) {
+      pagesField.value = exerciseCountField?.value || '1';
+      pagesField.readOnly = true;
+    } else {
+      pagesField.readOnly = false;
+    }
+  }
+}
+
 if (materialsToggle) {
   materialsToggle.onchange = () => {
     const box = document.getElementById('materials-extra');
@@ -133,6 +155,15 @@ if (materialsToggle) {
   };
   materialsToggle.onchange();
 }
+
+if (workTypeField) {
+  workTypeField.addEventListener('change', syncOrderMode);
+}
+if (exerciseCountField) {
+  exerciseCountField.addEventListener('input', syncOrderMode);
+}
+syncOrderMode();
+
 if (orderForm) {
   orderForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -141,15 +172,24 @@ if (orderForm) {
     if (!ok) return;
     const raw = new FormData(orderForm);
     const payload = new FormData();
+    const isExerciseMode = raw.get('workType') === 'auxilio_secundario';
+    const exerciseCount = Number(raw.get('exerciseCount') || 0);
+    if (isExerciseMode && exerciseCount <= 0) {
+      showToast('Informe o número de alíneas/exercícios para taxação automática.');
+      return;
+    }
+
     payload.set('tipo', raw.get('workType'));
     payload.set('area', raw.get('area'));
     payload.set('nivel', raw.get('academicLevel'));
-    payload.set('paginas', raw.get('pages'));
+    payload.set('paginas', isExerciseMode ? String(exerciseCount) : raw.get('pages'));
     payload.set('norma', raw.get('formatting'));
     payload.set('complexidade', raw.get('complexity'));
     payload.set('urgencia', raw.get('urgency'));
     payload.set('descricao', raw.get('description'));
     payload.set('prazo_entrega', raw.get('deliveryDeadline'));
+    if (isExerciseMode) payload.set('exercicios', String(exerciseCount));
+
     if (raw.get('referralCode')) {
       payload.set('referral_code', raw.get('referralCode'));
     }
@@ -163,6 +203,11 @@ if (orderForm) {
         Array.from(materialsField.files).forEach((file) => payload.append('materiais_uploads[]', file));
       }
     }
+    const exerciseFiles = document.getElementById('exerciseFiles');
+    if (isExerciseMode && exerciseFiles?.files?.length) {
+      Array.from(exerciseFiles.files).forEach((file) => payload.append('exercicios_uploads[]', file));
+    }
+
     const submitBtn = orderForm.querySelector('button[type="submit"]');
     const progress = window.UploadUtils?.ensureProgressUI(orderForm);
     try {
@@ -177,6 +222,7 @@ if (orderForm) {
         : { ok: false, data: { message: 'UploadUtils indisponível' } };
       if (!result.ok) throw new Error(result.data.message || 'Erro ao criar encomenda');
       orderForm.reset();
+      syncOrderMode();
       showToast('Encomenda criada e fatura emitida.');
       setTimeout(() => {
         window.location.href = `/invoice.html?id=${result.data.order_id}`;
@@ -195,12 +241,18 @@ if (quoteBtn) {
   quoteBtn.addEventListener('click', async () => {
     if (!requireAuth()) return;
     const raw = new FormData(orderForm);
-    const body = {
-      paginas: Number(raw.get('pages') || 0),
-      nivel: raw.get('academicLevel'),
-      complexidade: raw.get('complexity'),
-      urgencia: raw.get('urgency'),
-    };
+    const isExerciseMode = raw.get('workType') === 'auxilio_secundario';
+    const body = isExerciseMode
+      ? {
+          tipo: 'auxilio_secundario',
+          exercicios: Number(raw.get('exerciseCount') || 0),
+        }
+      : {
+          paginas: Number(raw.get('pages') || 0),
+          nivel: raw.get('academicLevel'),
+          complexidade: raw.get('complexity'),
+          urgencia: raw.get('urgency'),
+        };
     try {
       const res = await fetch(`${apiBase}/orders/quote`, {
         method: 'POST',
@@ -211,7 +263,9 @@ if (quoteBtn) {
       if (!res.ok) throw new Error(data.message || 'Não foi possível calcular');
       const zone = document.getElementById('quote-preview');
       if (zone) {
-        zone.innerHTML = `<p><strong>Total estimado:</strong> ${data.total}</p><p>Base ${data.base} × ${body.paginas} páginas · nível x${data.levelFactor} · complexidade x${data.complexityFactor} · urgência x${data.urgencyFactor}</p>`;
+        zone.innerHTML = isExerciseMode
+          ? `<p><strong>Total estimado:</strong> ${data.total} MZN</p><p>${data.exerciseCount} alíneas × ${data.unitPrice} MZN por alínea.</p>`
+          : `<p><strong>Total estimado:</strong> ${data.total} MZN</p><p>Base ${data.base} × ${body.paginas} páginas · nível x${data.levelFactor} · complexidade x${data.complexFactor} · urgência x${data.urgencyFactor}</p>`;
       }
     } catch (err) {
       showToast(err.message);
