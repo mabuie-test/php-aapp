@@ -129,6 +129,11 @@ header {
   flex-wrap: wrap;
 }
 
+.nav-links .auth-only,
+.nav-links .anon-only {
+  min-width: fit-content;
+}
+
 .logged-in .nav-links {
   justify-content: flex-start;
   padding-top: 0.4rem;
@@ -1734,77 +1739,50 @@ canvas {
   }
 }
 
-/* ============================================
-   HAMBURGUER MOBILE COMPACTO
-   ============================================ */
-.mobile-hamburger {
-  display: none;
-  width: 26px;
-  height: 22px;
-  padding: 3px;
-  border: 1px solid rgba(255,255,255,0.18);
-  border-radius: 6px;
-  background: rgba(15,23,42,0.65);
-  position: absolute;
-  right: 10px;
-  top: 10px;
-  z-index: 1002;
-}
-.mobile-hamburger span {
-  display: block;
-  height: 2px;
-  margin: 3px 0;
-  background: var(--gray-light);
-}
-
 @media (max-width: 768px) {
-  .mobile-hamburger { display: block; }
-
-  header {
-    padding-right: 2.8rem;
-  }
-
   header .navbar,
   header nav.navbar,
   header > nav {
-    display: none;
-    width: 100%;
-  }
-
-  body.navbar-open header {
-    max-height: 100vh;
-    overflow-y: auto;
-  }
-
-  body.navbar-open header .navbar,
-  body.navbar-open header nav.navbar,
-  body.navbar-open header > nav {
     display: flex;
-    flex-direction: column;
-    gap: 0.55rem;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: 0.6rem;
     width: 100%;
-    margin-top: 0.4rem;
+    margin-top: 0.5rem;
   }
 
-  body.navbar-open header .nav-links {
+  header .nav-links {
     width: 100%;
     display: flex;
-    flex-direction: column;
-    gap: 0.55rem;
+    flex-wrap: wrap;
+    gap: 0.6rem;
   }
 
-  body.navbar-open header .nav-links > * {
-    min-width: 0;
-    width: 100%;
-    flex: 1 1 auto;
+  header .nav-links > * {
+    flex: 1 1 calc(50% - 0.6rem);
+    min-width: 140px;
   }
 
-  body.navbar-open header .navbar a,
-  body.navbar-open header .navbar .ghost,
-  body.navbar-open header nav a,
-  body.navbar-open header nav button {
-    width: 100%;
-    justify-content: flex-start;
+  header .navbar a,
+  header .navbar .ghost,
+  header nav a,
+  header nav button {
+    justify-content: center;
+    text-align: center;
+  }
+
+  header .nav-links .auth-only,
+  header .nav-links .anon-only {
+    flex: 1 1 calc(50% - 0.6rem);
+  }
+}
+
+@media (max-width: 480px) {
+  header .nav-links > *,
+  header .nav-links .auth-only,
+  header .nav-links .anon-only {
+    flex: 1 1 100%;
+    min-width: 100%;
   }
 }
 
