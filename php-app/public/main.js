@@ -250,7 +250,6 @@ if (orderForm) {
 const quoteBtn = document.getElementById('simulate-quote');
 if (quoteBtn) {
   quoteBtn.addEventListener('click', async () => {
-    if (!requireAuth()) return;
     const raw = new FormData(orderForm);
     const isExerciseMode = raw.get('workType') === 'auxilio_secundario';
     const body = isExerciseMode
@@ -265,18 +264,24 @@ if (quoteBtn) {
           urgencia: raw.get('urgency'),
         };
     try {
+      const quoteHeaders = { 'Content-Type': 'application/json' };
+      if (authToken) {
+        quoteHeaders.Authorization = `Bearer ${authToken}`;
+      }
       const res = await fetch(`${apiBase}/orders/quote`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
+        headers: quoteHeaders,
         body: JSON.stringify(body),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Não foi possível calcular');
       const zone = document.getElementById('quote-preview');
       if (zone) {
-        zone.innerHTML = isExerciseMode
+        const quoteSummary = isExerciseMode
           ? `<p><strong>Total estimado:</strong> ${data.total} MZN</p><p>${data.exerciseCount} alíneas × ${data.unitPrice} MZN por alínea.</p>`
           : `<p><strong>Total estimado:</strong> ${data.total} MZN</p><p>Base ${data.base} × ${body.paginas} páginas · nível x${data.levelFactor} · complexidade x${data.complexFactor} · urgência x${data.urgencyFactor}</p>`;
+        const loginHint = authToken ? '' : '<p><strong>Faça login para concluir o pedido.</strong></p>';
+        zone.innerHTML = `${quoteSummary}${loginHint}`;
       }
     } catch (err) {
       showToast(err.message);
