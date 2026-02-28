@@ -19,7 +19,6 @@ class OrderController
 {
     public static function quote(): void
     {
-        Auth::requireUser();
         $body = json_decode(file_get_contents('php://input'), true) ?? [];
 
         $isExercisePricing = (($body['tipo'] ?? '') === 'auxilio_secundario') || !empty($body['exercicios']);

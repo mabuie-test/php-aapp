@@ -2,11 +2,14 @@
 <html lang="pt">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=1280, initial-scale=1.0">
   <title>Auxílio ao Ensino Secundário - Livre-se das Tarefas</title>
   <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
+  <div class="footer" style="margin:0 auto 0.8rem;max-width:100%;padding:0.6rem 1rem;">
+    <p class="muted">M-Pesa: 851619970 · Titular Maria António Chicavele · suporte@fluxosoftwares.com</p>
+  </div>
   <header class="topbar">
     <div class="brand">Livre-se das Tarefas</div>
     <nav class="navbar">
@@ -84,7 +87,7 @@
 
     function requireAuth() {
       if (!authToken) {
-        window.location.href = '/login.html';
+        showToast('Faça login para continuar.');
         return false;
       }
       return true;
@@ -99,7 +102,6 @@
     });
 
     document.getElementById('simulate-quote')?.addEventListener('click', async () => {
-      if (!requireAuth()) return;
       const form = document.getElementById('secondary-order-form');
       const raw = new FormData(form);
       const body = {
@@ -109,7 +111,7 @@
       try {
         const res = await fetch(`${apiBase}/orders/quote`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
+          headers: authToken ? { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` } : { 'Content-Type': 'application/json' },
           body: JSON.stringify(body)
         });
         const data = await res.json();
@@ -151,6 +153,7 @@
       Array.from(files.files).forEach((f) => payload.append('exercicios_uploads[]', f));
 
       const btn = form.querySelector('button[type="submit"]');
+      const progress = window.UploadUtils?.ensureProgressUI(form);
       try {
         if (btn) btn.disabled = true;
         const result = window.UploadUtils
@@ -158,7 +161,7 @@
               method: 'POST',
               headers: { Authorization: `Bearer ${authToken}` },
               body: payload,
-              onProgress: () => {}
+              onProgress: (pct) => window.UploadUtils.setProgress(progress, pct, 'A enviar fotos dos exercícios...')
             })
           : { ok: false, data: { message: 'UploadUtils indisponível' } };
         if (!result.ok) throw new Error(result.data.message || 'Erro ao enviar pedido');
@@ -168,6 +171,7 @@
         showToast(err.message);
       } finally {
         if (btn) btn.disabled = false;
+        if (progress) window.UploadUtils.hideProgress(progress);
       }
     });
 
