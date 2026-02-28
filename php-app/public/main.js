@@ -128,32 +128,11 @@ const orderForm = document.getElementById('order-form');
 const materialsToggle = document.getElementById('has-materials');
 const workTypeField = document.querySelector('select[name="workType"]');
 const pagesField = document.getElementById('pages-field');
-const defaultOrderFields = document.getElementById('default-order-fields');
-const secondaryOnlyFields = document.getElementById('secondary-only-fields');
-const exerciseCountField = document.getElementById('exercise-count');
-const secondarySubjectField = document.getElementById('secondary-subject');
-const secondaryGradeField = document.getElementById('secondary-grade');
 
 function syncOrderMode() {
-  const isExerciseMode = workTypeField?.value === 'auxilio_secundario';
-  if (secondaryOnlyFields) secondaryOnlyFields.style.display = isExerciseMode ? 'block' : 'none';
-  if (defaultOrderFields) defaultOrderFields.style.display = isExerciseMode ? 'none' : 'block';
-
-  if (exerciseCountField) {
-    exerciseCountField.required = !!isExerciseMode;
-    if (!isExerciseMode) exerciseCountField.value = '';
-  }
-  if (secondarySubjectField) secondarySubjectField.required = !!isExerciseMode;
-  if (secondaryGradeField) secondaryGradeField.required = !!isExerciseMode;
-
   if (pagesField) {
-    pagesField.required = !isExerciseMode;
-    if (isExerciseMode) {
-      pagesField.value = exerciseCountField?.value || '1';
-      pagesField.readOnly = true;
-    } else {
-      pagesField.readOnly = false;
-    }
+    pagesField.required = true;
+    pagesField.readOnly = false;
   }
 }
 
@@ -168,9 +147,6 @@ if (materialsToggle) {
 if (workTypeField) {
   workTypeField.addEventListener('change', syncOrderMode);
 }
-if (exerciseCountField) {
-  exerciseCountField.addEventListener('input', syncOrderMode);
-}
 syncOrderMode();
 
 if (orderForm) {
@@ -181,30 +157,21 @@ if (orderForm) {
     if (!ok) return;
     const raw = new FormData(orderForm);
     const payload = new FormData();
-    const isExerciseMode = raw.get('workType') === 'auxilio_secundario';
-    const exerciseCount = Number(raw.get('exerciseCount') || 0);
-    if (isExerciseMode && exerciseCount <= 0) {
-      showToast('Informe o número de alíneas/exercícios para taxação automática.');
-      return;
-    }
 
     payload.set('tipo', raw.get('workType'));
-    payload.set('area', isExerciseMode ? raw.get('secondarySubject') : raw.get('area'));
-    payload.set('nivel', isExerciseMode ? `classe_${raw.get('secondaryClass')}` : raw.get('academicLevel'));
-    payload.set('paginas', isExerciseMode ? String(exerciseCount) : raw.get('pages'));
-    payload.set('norma', isExerciseMode ? 'N/A' : raw.get('formatting'));
-    payload.set('complexidade', isExerciseMode ? 'basica' : raw.get('complexity'));
-    payload.set('urgencia', isExerciseMode ? 'normal' : raw.get('urgency'));
-    payload.set('descricao', isExerciseMode
-      ? `Disciplina: ${raw.get('secondarySubject')} | Classe: ${raw.get('secondaryClass')}ª`
-      : raw.get('description'));
-    payload.set('prazo_entrega', isExerciseMode ? '' : raw.get('deliveryDeadline'));
-    if (isExerciseMode) payload.set('exercicios', String(exerciseCount));
+    payload.set('area', raw.get('area'));
+    payload.set('nivel', raw.get('academicLevel'));
+    payload.set('paginas', raw.get('pages'));
+    payload.set('norma', raw.get('formatting'));
+    payload.set('complexidade', raw.get('complexity'));
+    payload.set('urgencia', raw.get('urgency'));
+    payload.set('descricao', raw.get('description'));
+    payload.set('prazo_entrega', raw.get('deliveryDeadline'));
 
     if (raw.get('referralCode')) {
       payload.set('referral_code', raw.get('referralCode'));
     }
-    if (!isExerciseMode && raw.get('hasMaterials') === 'sim') {
+    if (raw.get('hasMaterials') === 'sim') {
       payload.set('materiais_info', 'Materiais fornecidos pelo cliente');
       if (raw.get('materialsUsagePercent')) {
         payload.set('materiais_percentual', raw.get('materialsUsagePercent'));
@@ -214,11 +181,6 @@ if (orderForm) {
         Array.from(materialsField.files).forEach((file) => payload.append('materiais_uploads[]', file));
       }
     }
-    const exerciseFiles = document.getElementById('exerciseFiles');
-    if (isExerciseMode && exerciseFiles?.files?.length) {
-      Array.from(exerciseFiles.files).forEach((file) => payload.append('exercicios_uploads[]', file));
-    }
-
     const submitBtn = orderForm.querySelector('button[type="submit"]');
     const progress = window.UploadUtils?.ensureProgressUI(orderForm);
     try {
@@ -252,18 +214,12 @@ if (quoteBtn) {
   quoteBtn.addEventListener('click', async () => {
     if (!requireAuth()) return;
     const raw = new FormData(orderForm);
-    const isExerciseMode = raw.get('workType') === 'auxilio_secundario';
-    const body = isExerciseMode
-      ? {
-          tipo: 'auxilio_secundario',
-          exercicios: Number(raw.get('exerciseCount') || 0),
-        }
-      : {
-          paginas: Number(raw.get('pages') || 0),
-          nivel: raw.get('academicLevel'),
-          complexidade: raw.get('complexity'),
-          urgencia: raw.get('urgency'),
-        };
+    const body = {
+      paginas: Number(raw.get('pages') || 0),
+      nivel: raw.get('academicLevel'),
+      complexidade: raw.get('complexity'),
+      urgencia: raw.get('urgency'),
+    };
     try {
       const res = await fetch(`${apiBase}/orders/quote`, {
         method: 'POST',
@@ -274,9 +230,7 @@ if (quoteBtn) {
       if (!res.ok) throw new Error(data.message || 'Não foi possível calcular');
       const zone = document.getElementById('quote-preview');
       if (zone) {
-        zone.innerHTML = isExerciseMode
-          ? `<p><strong>Total estimado:</strong> ${data.total} MZN</p><p>${data.exerciseCount} alíneas × ${data.unitPrice} MZN por alínea.</p>`
-          : `<p><strong>Total estimado:</strong> ${data.total} MZN</p><p>Base ${data.base} × ${body.paginas} páginas · nível x${data.levelFactor} · complexidade x${data.complexFactor} · urgência x${data.urgencyFactor}</p>`;
+        zone.innerHTML = `<p><strong>Total estimado:</strong> ${data.total} MZN</p><p>Base ${data.base} × ${body.paginas} páginas · nível x${data.levelFactor} · complexidade x${data.complexFactor} · urgência x${data.urgencyFactor}</p>`;
       }
     } catch (err) {
       showToast(err.message);

@@ -130,6 +130,23 @@
       width: 100%;
     }
 
+
+    .secondary-highlight-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: #fff;
+      border-radius: 999px;
+      padding: 0.45rem 0.9rem;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .navbar a.secondary-highlight-link::after {
+      display: none;
+    }
+
     .navbar .ghost {
       background: transparent;
       border: 2px solid var(--gray);
@@ -876,6 +893,7 @@
           <a href="/documents.html" class="auth-only">Documentos</a>
           <a href="/affiliates.html" class="auth-only">Afiliados</a>
           <a href="/services.html">Serviços</a>
+          <a href="/secondary-school.html" class="secondary-highlight-link">Ensino Secundário</a>
           <a href="/admin.html" class="admin-only auth-only">Admin</a>
           <a href="/terms.html">Termos</a>
           <a href="/help.html">Ajuda</a>
@@ -889,6 +907,7 @@
   <section class="hero fade-in">
     <h2>Plataforma completa para trabalhos académicos</h2>
     <p>Serviços especializados com acompanhamento personalizado e garantia de qualidade.</p>
+    <p><a href="/secondary-school.html" class="secondary-highlight-link">Precisa de auxílio para ensino secundário? Clique aqui.</a></p>
     <p id="referral-banner"></p>
     <div class="hero-social-proof">
       <div class="hero-proof-card">

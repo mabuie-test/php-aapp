@@ -13,7 +13,7 @@
       <a href="/index.html">Início</a>
       <a href="/documents.html" class="auth-only">Faturas e documentos</a>
       <a href="/services.html">Serviços especializados</a>
-      <a href="/secondary-school.html">Ensino Secundário</a>
+      <a href="/secondary-school.html" class="secondary-highlight-link">Ensino Secundário</a>
       <button id="logout" class="ghost auth-only">Terminar sessão</button>
       <a href="/login.html" class="anon-only">Login</a>
       <a href="/register.html" class="anon-only">Registo</a>
@@ -35,37 +35,8 @@
           <option value="Trabalhos de Campo">Trabalhos de Campo</option>
           <option value="Trabalhos de Pesquisa">Trabalhos de Pesquisa</option>
           <option value="Exames">Exames</option>
-          <option value="auxilio_secundario">Auxílio ao ensino secundário (tarefas)</option>
           <option value="Relatórios de Estágio">Relatórios de Estágio</option>
         </select>
-
-        <div id="secondary-only-fields" class="nested" style="display:none;">
-          <p class="muted"><strong>Taxação automática:</strong> 5 MZN por alínea/exercício.</p>
-          <label>Disciplina</label>
-          <select id="secondary-subject" name="secondarySubject">
-            <option value="matematica">Matemática</option>
-            <option value="fisica">Física</option>
-            <option value="quimica">Química</option>
-            <option value="biologia">Biologia</option>
-            <option value="portugues">Português</option>
-            <option value="ingles">Inglês</option>
-            <option value="historia">História</option>
-            <option value="geografia">Geografia</option>
-            <option value="outra">Outra</option>
-          </select>
-          <label>Classe</label>
-          <select id="secondary-grade" name="secondaryClass">
-            <option value="8">8ª classe</option>
-            <option value="9">9ª classe</option>
-            <option value="10">10ª classe</option>
-            <option value="11">11ª classe</option>
-            <option value="12">12ª classe</option>
-          </select>
-          <label>Número de alíneas/exercícios</label>
-          <input type="number" id="exercise-count" name="exerciseCount" min="1" placeholder="Ex.: 12" />
-          <label>Enviar foto dos exercícios propostos (pode selecionar várias)</label>
-          <input type="file" id="exerciseFiles" name="exercicios_uploads[]" accept="image/*" multiple />
-        </div>
 
         <div id="default-order-fields">
           <label>Área científica</label>
