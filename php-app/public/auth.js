@@ -1,6 +1,33 @@
 const apiBase = '/api';
 let authToken = localStorage.getItem('token') || '';
 
+function showAppDialog(message, type = 'info') {
+  const old = document.getElementById('app-dialog-overlay');
+  if (old) old.remove();
+  const overlay = document.createElement('div');
+  overlay.id = 'app-dialog-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(2,6,23,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;padding:1rem;';
+  const card = document.createElement('div');
+  card.style.cssText = 'max-width:460px;width:100%;background:linear-gradient(145deg,#0f172a,#1e293b);border:1px solid rgba(11,99,230,0.5);border-radius:16px;padding:1rem 1.1rem;box-shadow:0 20px 40px rgba(0,0,0,0.35);color:#e2e8f0;font-family:Inter,system-ui,sans-serif;';
+  const icon = type === 'success' ? '✅' : 'ℹ️';
+  const iconBg = type === 'success' ? 'rgba(6,214,160,0.2)' : 'rgba(11,99,230,0.2)';
+  card.innerHTML = `
+    <div style="display:flex;align-items:center;gap:0.7rem;margin-bottom:0.75rem;">
+      <span style="display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:999px;background:${iconBg};font-size:1.1rem;">${icon}</span>
+      <strong style="font-size:1.05rem;color:#f8fafc;">${type === 'success' ? 'Sucesso' : 'Informação'}</strong>
+    </div>
+    <p style="margin:0 0 1rem;line-height:1.45;color:#cbd5e1;">${String(message || '').replace(/</g, '&lt;')}</p>
+    <div style="display:flex;justify-content:flex-end;">
+      <button id="app-dialog-ok" style="border:none;border-radius:10px;padding:0.55rem 1rem;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#0b63e6,#7c3aed);color:#fff;">OK</button>
+    </div>`;
+  overlay.appendChild(card);
+  document.body.appendChild(overlay);
+  const close = () => overlay.remove();
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  card.querySelector('#app-dialog-ok')?.addEventListener('click', close);
+}
+
+
 function clearReferral() {
   sessionStorage.removeItem('referral_ref');
   sessionStorage.removeItem('referral_ref_ts');
@@ -73,13 +100,19 @@ function renderReferralTag() {
   }
 }
 
-function handleLogin(token, role) {
+function handleLogin(token, role, options = {}) {
   if (token) {
     authToken = token;
     localStorage.setItem('token', token);
     if (role) localStorage.setItem('role', role);
     toggleNav();
-    window.location.href = role === 'admin' ? '/admin.html' : '/';
+    const destination = role === 'admin' ? '/admin.html' : '/';
+    if (options.showSuccess) {
+      showAppDialog(options.successMessage || 'Operação concluída com sucesso.', 'success');
+      setTimeout(() => { window.location.href = destination; }, 900);
+      return;
+    }
+    window.location.href = destination;
   }
 }
 
@@ -120,9 +153,9 @@ if (signupForm) {
     const data = await res.json();
     if (res.ok && data.token) {
       clearReferral();
-      handleLogin(data.token, data.user?.role);
+      handleLogin(data.token, data.user?.role, { showSuccess: true, successMessage: 'Conta criada com sucesso. Bem-vindo(a)!' });
     } else {
-      alert(data.message || 'Erro no registo');
+      showAppDialog(data.message || 'Erro no registo');
     }
   });
 }
@@ -140,9 +173,9 @@ if (signinForm) {
     const data = await res.json();
     if (res.ok && data.token) {
       clearReferral();
-      handleLogin(data.token, data.user?.role);
+      handleLogin(data.token, data.user?.role, { showSuccess: true, successMessage: 'Login efectuado com sucesso.' });
     } else {
-      alert(data.message || 'Erro no login');
+      showAppDialog(data.message || 'Erro no login');
     }
   });
 }
@@ -153,9 +186,9 @@ if (forgotForm) {
     e.preventDefault();
     try {
       await requestReset(forgotForm.email.value);
-      alert('Enviámos um código e link para o seu email.');
+      showAppDialog('Enviámos um código e link para o seu email.', 'success');
     } catch (err) {
-      alert(err.message);
+      showAppDialog(err.message);
     }
   });
 }
@@ -170,10 +203,10 @@ if (resetForm) {
     const payload = Object.fromEntries(new FormData(resetForm).entries());
     try {
       await resetPassword(payload);
-      alert('Palavra-passe atualizada. Faça login novamente.');
+      showAppDialog('Palavra-passe atualizada. Faça login novamente.', 'success');
       window.location.href = '/login.html';
     } catch (err) {
-      alert(err.message);
+      showAppDialog(err.message);
     }
   });
 }
@@ -182,6 +215,7 @@ toggleNav();
 renderReferralTag();
 
 const storedRole = localStorage.getItem('role');
-if (authToken && window.location.pathname !== '/') {
+const isAuthPage = ['/login.html', '/register.html', '/reset.html'].includes(window.location.pathname);
+if (authToken && !isAuthPage && window.location.pathname !== '/') {
   window.location.href = storedRole === 'admin' ? '/admin.html' : '/';
 }

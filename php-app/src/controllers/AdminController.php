@@ -246,7 +246,9 @@ public static function payouts(): void
     {
         $admin = self::requireAdmin();
         $orderId = (int) ($_POST['order_id'] ?? 0);
-        if (!$orderId || empty($_FILES['final']['tmp_name'])) {
+        $filesInput = $_FILES['final'] ?? $_FILES['final_arquivos'] ?? $_FILES['final[]'] ?? null;
+        $tmpFiles = $filesInput['tmp_name'] ?? null;
+        if (!$orderId || empty($tmpFiles)) {
             Response::json(['message' => 'Ficheiro final em falta'], 400);
             return;
         }
@@ -254,18 +256,32 @@ public static function payouts(): void
         if (!is_dir($dir)) {
             mkdir($dir, 0775, true);
         }
-        $safeName = uniqid('final_') . '-' . preg_replace('/[^a-zA-Z0-9\.\-_]/', '_', $_FILES['final']['name']);
-        $dest = $dir . '/' . $safeName;
-        if (!move_uploaded_file($_FILES['final']['tmp_name'], $dest)) {
-            Response::json(['message' => 'Não foi possível guardar o ficheiro'], 500);
+
+        $storedFiles = [];
+        if (is_array($tmpFiles)) {
+            $names = $filesInput['name'] ?? [];
+            foreach ($tmpFiles as $i => $tmpName) {
+                if (empty($tmpName)) continue;
+                $safeName = uniqid('final_') . '-' . preg_replace('/[^a-zA-Z0-9\.\-_]/', '_', (string) ($names[$i] ?? ('ficheiro_' . $i)));
+                $dest = $dir . '/' . $safeName;
+                if (move_uploaded_file($tmpName, $dest)) {
+                    $storedFiles[] = '/uploads/finais/' . $safeName;
+                }
+            }
+        } else {
+            $safeName = uniqid('final_') . '-' . preg_replace('/[^a-zA-Z0-9\.\-_]/', '_', (string) ($filesInput['name'] ?? 'ficheiro'));
+            $dest = $dir . '/' . $safeName;
+            if (move_uploaded_file((string) $tmpFiles, $dest)) {
+                $storedFiles[] = '/uploads/finais/' . $safeName;
+            }
+        }
+
+        if (empty($storedFiles)) {
+            Response::json(['message' => 'Não foi possível guardar o(s) ficheiro(s)'], 500);
             return;
         }
 
-        // Attach final file (this method currently sets estado = CONCLUIDA in the model).
-        // We still persist the file, then explicitly set status to DOCUMENTO_FINAL_SUBMETIDO
-        // so admin UI can show the intermediate state. If you prefer automatic conclusion,
-        // modify to 'CONCLUIDA' later when marking as delivered.
-        Order::saveFinalFile($orderId, '/uploads/finais/' . $safeName);
+        Order::saveFinalFiles($orderId, $storedFiles);
         Order::updateEstado($orderId, 'DOCUMENTO_FINAL_SUBMETIDO');
 
         $order = Order::findWithUser($orderId);
