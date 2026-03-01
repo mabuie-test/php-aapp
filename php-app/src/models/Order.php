@@ -74,8 +74,25 @@ class Order
      */
     public static function saveFinalFile(int $orderId, string $file): void
     {
+        self::saveFinalFiles($orderId, [$file]);
+    }
+
+    public static function saveFinalFiles(int $orderId, array $files): void
+    {
+        $existing = self::findById($orderId);
+        $current = [];
+        if (!empty($existing['final_file']) && is_string($existing['final_file'])) {
+            $decoded = json_decode($existing['final_file'], true);
+            if (is_array($decoded)) {
+                $current = $decoded;
+            } elseif (trim($existing['final_file']) !== '') {
+                $current = [$existing['final_file']];
+            }
+        }
+        $merged = array_values(array_unique(array_filter(array_merge($current, $files))));
+        $value = json_encode($merged, JSON_UNESCAPED_UNICODE);
         $stmt = Database::pdo()->prepare('UPDATE orders SET final_file = :file, estado = "CONCLUIDA" WHERE id = :id');
-        $stmt->execute([':file' => $file, ':id' => $orderId]);
+        $stmt->execute([':file' => $value, ':id' => $orderId]);
     }
 
     /**

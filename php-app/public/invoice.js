@@ -3,6 +3,39 @@ let authToken = localStorage.getItem('token') || '';
 const params = new URLSearchParams(window.location.search);
 const orderId = params.get('id');
 
+function parseStoredFileList(value) {
+  if (!value) return [];
+  if (Array.isArray(value)) return value.filter(Boolean);
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return [];
+    if (trimmed.startsWith('[')) {
+      try {
+        const arr = JSON.parse(trimmed);
+        if (Array.isArray(arr)) return arr.filter(Boolean);
+      } catch (_) {}
+    }
+    return [trimmed];
+  }
+  return [];
+}
+
+function showInvoiceDialog(message, type = 'info') {
+  const old = document.getElementById('invoice-dialog-overlay');
+  if (old) old.remove();
+  const overlay = document.createElement('div');
+  overlay.id = 'invoice-dialog-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(2,6,23,.65);display:flex;align-items:center;justify-content:center;z-index:9999;padding:1rem;';
+  const card = document.createElement('div');
+  card.style.cssText = 'max-width:430px;width:100%;background:linear-gradient(140deg,#0f172a,#1e293b);border:1px solid rgba(11,99,230,.5);border-radius:14px;padding:1rem;color:#e2e8f0;';
+  card.innerHTML = `<div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.6rem;"><span style="width:34px;height:34px;border-radius:999px;background:${type==='success'?'rgba(6,214,160,.2)':'rgba(11,99,230,.2)'};display:inline-flex;align-items:center;justify-content:center;">${type==='success'?'✅':'ℹ️'}</span><strong>${type==='success'?'Sucesso':'Informação'}</strong></div><p style="margin:0 0 .9rem">${String(message||'').replace(/</g,'&lt;')}</p><button id="invoice-dialog-ok" class="primary" style="padding:.5rem .95rem;">OK</button>`;
+  overlay.appendChild(card);
+  document.body.appendChild(overlay);
+  const close = () => overlay.remove();
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  card.querySelector('#invoice-dialog-ok')?.addEventListener('click', close);
+}
+
 function requireAuth() {
   if (!authToken) {
     window.location.href = '/login.html';
@@ -27,7 +60,8 @@ async function loadInvoice() {
     if (!res.ok) throw new Error(data.message || 'Não foi possível carregar a fatura');
     const order = data.order;
     const body = document.getElementById('invoice-body');
-    const materials = order.materiais_uploads ? JSON.parse(order.materiais_uploads) : [];
+    const materials = parseStoredFileList(order.materiais_uploads);
+    const finalFiles = parseStoredFileList(order.final_file);
     const descriptionHtml = (order.descricao || '—').replace(/\n/g, '<br>');
     const proofForm = document.getElementById('proof-form');
     if (proofForm) {
@@ -51,10 +85,10 @@ async function loadInvoice() {
       <p><strong>Pagamento M-Pesa</strong></p>
       <p>Número: 851619970 · Titular: Maria António Chicavele</p>
       <p class="muted">Após pagar, envie o comprovativo nesta página.</p>
-      ${order.final_file ? `<p class="success">Documento final: <a href="${order.final_file}" target="_blank">download</a></p>` : ''}
+      ${finalFiles.length ? `<p class="success">Documento(s) final(is): ${finalFiles.map((f) => `<a href="${f}" target="_blank">${f.split('/').pop()}</a>`).join(', ')}</p>` : ''}
     `;
   } catch (err) {
-    alert(err.message);
+    showInvoiceDialog(err.message);
   }
 }
 
@@ -100,10 +134,10 @@ if (proofForm) {
         onProgress: (pct) => window.UploadUtils.setProgress(progress, pct, 'A enviar comprovativo...'),
       });
       if (!result.ok) throw new Error(result.data.message || 'Falha ao enviar comprovativo');
-      alert('Comprovativo enviado com sucesso.');
+      showInvoiceDialog('Comprovativo enviado com sucesso.', 'success');
       loadInvoice();
     } catch (err) {
-      alert(err.message);
+      showInvoiceDialog(err.message);
     } finally {
       if (submitBtn) submitBtn.disabled = false;
       if (progress) window.UploadUtils.hideProgress(progress);
