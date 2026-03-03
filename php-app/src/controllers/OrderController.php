@@ -215,9 +215,20 @@ class OrderController
     {
         $user = Auth::requireUser();
         $orders = Order::listForUser($user['id']);
-        $deliverables = array_values(array_filter($orders, fn($o) => !empty($o['final_file'])));
-        // decodifica materiais nos documentos também
+
         $deliverables = array_map(function ($o) {
+            $final = $o['final_file'] ?? null;
+            $finalFiles = [];
+            if (is_string($final) && $final !== '') {
+                $decodedFinal = json_decode($final, true);
+                if (is_array($decodedFinal)) {
+                    $finalFiles = array_values(array_filter($decodedFinal, fn($f) => is_string($f) && $f !== ''));
+                } else {
+                    $finalFiles = [$final];
+                }
+            }
+            $o['final_files'] = $finalFiles;
+
             $m = $o['materiais_uploads'] ?? null;
             $decoded = [];
             if ($m && is_string($m)) {
@@ -226,7 +237,9 @@ class OrderController
             }
             $o['materiais_array'] = $decoded;
             return $o;
-        }, $deliverables);
+        }, $orders);
+
+        $deliverables = array_values(array_filter($deliverables, fn($o) => !empty($o['final_files'])));
         Response::json(['documents' => $deliverables]);
     }
 

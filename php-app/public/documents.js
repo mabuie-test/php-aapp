@@ -1,6 +1,23 @@
 const apiBase = '/api';
 let authToken = localStorage.getItem('token') || '';
 
+function parseStoredFileList(value) {
+  if (!value) return [];
+  if (Array.isArray(value)) return value.filter(Boolean);
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return [];
+    if (trimmed.startsWith('[')) {
+      try {
+        const arr = JSON.parse(trimmed);
+        if (Array.isArray(arr)) return arr.filter(Boolean);
+      } catch (_) {}
+    }
+    return [trimmed];
+  }
+  return [];
+}
+
 function requireAuth() {
   if (!authToken) {
     window.location.href = '/login.html';
@@ -68,26 +85,33 @@ async function loadDocuments() {
     list.innerHTML = `<p class="muted">${data.message || 'Erro ao carregar documentos'}</p>`;
     return;
   }
-  if (!data.documents.length) {
+  const docs = Array.isArray(data.documents) ? data.documents : [];
+  if (!docs.length) {
     list.innerHTML = '<p class="muted">Nenhum documento final disponível ainda.</p>';
     return;
   }
-  data.documents.forEach((doc) => {
+  docs.forEach((doc) => {
+    const finalFiles = parseStoredFileList(doc.final_files?.length ? doc.final_files : doc.final_file);
+    if (!finalFiles.length) return;
+    const links = finalFiles.map((file, idx) => `<a class="primary" href="${file}" target="_blank">Download ${finalFiles.length > 1 ? idx + 1 : ''}</a>`).join(' ');
     const item = document.createElement('div');
     item.className = 'list-item';
     item.innerHTML = `
       <div>
         <strong>${doc.tipo}</strong>
-        <p class="muted">Entrega pronta (${doc.estado})</p>
+        <p class="muted">Entrega pronta (${doc.estado}) · ${finalFiles.length} ficheiro(s)</p>
       </div>
       <div class="stacked-actions">
-        <a class="primary" href="${doc.final_file}" target="_blank">Download</a>
+        ${links}
         <button class="ghost" data-order="${doc.id}" data-grade="">Enviar feedback</button>
       </div>
     `;
     item.querySelector('button').onclick = () => openFeedbackModal(doc.id);
     list.appendChild(item);
   });
+  if (!list.children.length) {
+    list.innerHTML = '<p class="muted">Nenhum documento final disponível ainda.</p>';
+  }
 }
 
 async function loadFeedback() {
@@ -101,7 +125,7 @@ async function loadFeedback() {
     list.innerHTML = `<p class="muted">${data.message || 'Erro ao carregar feedback'}</p>`;
     return;
   }
-  const delivered = data.orders.filter((o) => o.final_file);
+  const delivered = data.orders.filter((o) => parseStoredFileList(o.final_files?.length ? o.final_files : o.final_file).length > 0);
   if (!delivered.length) {
     list.innerHTML = '<p class="muted">Envie feedback após receber o trabalho final.</p>';
     return;
