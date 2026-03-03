@@ -20,8 +20,13 @@
   <main class="content">
     <section class="card">
       <h1>Pedidos de serviços especializados</h1>
-      <p class="muted">Inclui revisão linguística, estatística, apresentações, CV, plágio e resumos.</p>
+      <p class="muted">Inclui revisão linguística, estatística, apresentações, CV, plágio, resumos e pedidos de Ensino à Distância VIP.</p>
       <div id="admin-feedback" class="toast"></div>
+      <div class="inline-group services-filter-bar" style="margin:0.75rem 0 1rem;flex-wrap:wrap;">
+        <button type="button" class="ghost" data-service-filter="all">Todos</button>
+        <button type="button" class="ghost" data-service-filter="vip">Ensino VIP</button>
+        <button type="button" class="ghost" data-service-filter="others">Outros serviços</button>
+      </div>
       <div id="admin-services" class="grid"></div>
     </section>
   </main>

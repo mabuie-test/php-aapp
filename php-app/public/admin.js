@@ -4,6 +4,7 @@ let statusChart;
 let revenueChart;
 let servicesChart;
 const adminPage = document.body.dataset.page || 'dashboard';
+let currentServiceFilter = 'all';
 
 function showDialogMessage(message, type = 'info') {
   const old = document.getElementById('admin-dialog-overlay');
@@ -585,16 +586,39 @@ async function loadServices() {
     list.innerHTML = `<p class="muted">${data.message || 'Erro ao carregar serviços'}</p>`;
     return;
   }
+
+  const all = Array.isArray(data.services) ? data.services : [];
+  const vipOnly = all.filter((svc) => (svc.categoria || '').toLowerCase().includes('ensino à distância vip'));
+  let services = all;
+  if (currentServiceFilter === 'vip') services = vipOnly;
+  if (currentServiceFilter === 'others') services = all.filter((svc) => !(svc.categoria || '').toLowerCase().includes('ensino à distância vip'));
+
+  // prioriza VIP no topo quando filtro = all
+  if (currentServiceFilter === 'all') {
+    services = [...services].sort((a, b) => {
+      const av = (a.categoria || '').toLowerCase().includes('ensino à distância vip') ? 1 : 0;
+      const bv = (b.categoria || '').toLowerCase().includes('ensino à distância vip') ? 1 : 0;
+      return bv - av;
+    });
+  }
+
   list.innerHTML = '';
-  data.services.forEach((svc) => {
+  if (!services.length) {
+    list.innerHTML = `<p class="muted">${currentServiceFilter === 'vip' ? 'Ainda sem pedidos VIP submetidos.' : 'Sem pedidos nesta categoria.'}</p>`;
+    return;
+  }
+
+  services.forEach((svc) => {
+    const isVip = (svc.categoria || '').toLowerCase().includes('ensino à distância vip');
     const item = document.createElement('div');
     item.className = 'card';
     item.innerHTML = `
-      <h4>${svc.categoria}</h4>
+      <h4>${svc.categoria} ${isVip ? '<span class="badge" style="margin-left:.35rem">VIP</span>' : ''}</h4>
       <p class="muted">${svc.contact_name} · ${svc.contact_email} ${svc.contact_phone ? ' · ' + svc.contact_phone : ''}</p>
       <p>${svc.detalhes || ''}</p>
       <p>${svc.norma_preferida ? 'Norma: ' + svc.norma_preferida + ' · ' : ''}${svc.software_preferido ? 'Software: ' + svc.software_preferido : ''}</p>
       ${svc.attachment ? `<p><a href="${svc.attachment}" target="_blank">Ver anexo</a></p>` : ''}
+      ${isVip && svc.contact_phone ? `<p><a href="https://wa.me/${String(svc.contact_phone).replace(/\D/g,'')}" target="_blank" rel="noopener">Contactar no WhatsApp</a></p>` : ''}
       <div class="inline-group">
         <select data-service="${svc.id}">
           ${['NOVO','EM_ANALISE','RESPONDIDO','CONCLUIDO'].map((s) => `<option value="${s}" ${svc.status===s?'selected':''}>${s}</option>`).join('')}
@@ -693,6 +717,12 @@ switch (adminPage) {
     }, 20000);
     break;
   case 'services':
+    document.querySelectorAll('[data-service-filter]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        currentServiceFilter = btn.getAttribute('data-service-filter') || 'all';
+        loadServices();
+      });
+    });
     loadServices();
     setInterval(loadServices, 20000);
     break;
