@@ -167,8 +167,14 @@
             })
           : { ok: false, data: { message: 'UploadUtils indisponível' } };
         if (!result.ok) throw new Error(result.data.message || 'Erro ao enviar pedido');
+        const orderId = result?.data?.order_id || result?.data?.id || result?.data?.orderId || null;
+        if (!orderId) {
+          showToast('Pedido enviado, mas não foi possível abrir a fatura automaticamente. Veja em "Documentos".');
+          setTimeout(() => { window.location.href = '/documents.html'; }, 700);
+          return;
+        }
         showToast('Pedido enviado com sucesso. Fatura emitida.');
-        setTimeout(() => { window.location.href = `/invoice.html?id=${result.data.order_id}`; }, 400);
+        setTimeout(() => { window.location.href = `/invoice.html?id=${orderId}`; }, 400);
       } catch (err) {
         showToast(err.message);
       } finally {
