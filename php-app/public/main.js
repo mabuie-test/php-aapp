@@ -1,6 +1,39 @@
 const apiBase = '/api';
 let authToken = localStorage.getItem('token') || '';
 
+function parseStoredFileList(value) {
+  if (!value) return [];
+  if (Array.isArray(value)) return value.filter(Boolean);
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return [];
+    if (trimmed.startsWith('[')) {
+      try {
+        const arr = JSON.parse(trimmed);
+        if (Array.isArray(arr)) return arr.filter(Boolean);
+      } catch (_) {}
+    }
+    return [trimmed];
+  }
+  return [];
+}
+
+function showAppDialog(message, type = 'info') {
+  const old = document.getElementById('site-dialog-overlay');
+  if (old) old.remove();
+  const overlay = document.createElement('div');
+  overlay.id = 'site-dialog-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(2,6,23,.65);display:flex;align-items:center;justify-content:center;z-index:9999;padding:1rem;';
+  const card = document.createElement('div');
+  card.style.cssText = 'max-width:430px;width:100%;background:linear-gradient(140deg,#0f172a,#1e293b);border:1px solid rgba(11,99,230,.5);border-radius:14px;padding:1rem;color:#e2e8f0;';
+  card.innerHTML = `<div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.6rem;"><span style="width:34px;height:34px;border-radius:999px;background:${type==='success'?'rgba(6,214,160,.2)':'rgba(11,99,230,.2)'};display:inline-flex;align-items:center;justify-content:center;">${type==='success'?'✅':'ℹ️'}</span><strong>${type==='success'?'Sucesso':'Informação'}</strong></div><p style="margin:0 0 .9rem">${String(message||'').replace(/</g,'&lt;')}</p><button id="site-dialog-ok" class="primary" style="padding:.5rem .95rem;">OK</button>`;
+  overlay.appendChild(card);
+  document.body.appendChild(overlay);
+  const close = () => overlay.remove();
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  card.querySelector('#site-dialog-ok')?.addEventListener('click', close);
+}
+
 function syncNav() {
   const role = localStorage.getItem('role');
   document.querySelectorAll('.anon-only').forEach((el) => (el.style.display = authToken ? 'none' : 'inline-flex'));
@@ -101,7 +134,7 @@ function showToast(text) {
     zone.classList.add('visible');
     setTimeout(() => zone.classList.remove('visible'), 2500);
   } else {
-    alert(text);
+    showAppDialog(text);
   }
 }
 
@@ -306,7 +339,7 @@ async function loadOrders() {
         <p>Estado: <strong>${order.estado}</strong></p>
         <p>Fatura: ${order.invoice_numero || '—'} (${order.invoice_estado || 'EMITIDA'})</p>
         <p>Total: ${order.valor_total || '—'}</p>
-        ${order.final_file ? `<p class="success">Trabalho final disponível: <a href="${order.final_file}" target="_blank">baixar</a></p>` : ''}
+        ${(() => { const files = parseStoredFileList(order.final_file); return files.length ? `<p class="success">Trabalho final disponível: ${files.map((f) => `<a href="${f}" target="_blank">${f.split('/').pop()}</a>`).join(', ')}</p>` : ''; })()}
         <div class="stacked-actions">
           <a class="primary" href="/invoice.html?id=${order.id}" target="_blank">Ver fatura</a>
         </div>

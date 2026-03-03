@@ -5,6 +5,38 @@ let revenueChart;
 let servicesChart;
 const adminPage = document.body.dataset.page || 'dashboard';
 
+function showDialogMessage(message, type = 'info') {
+  const old = document.getElementById('admin-dialog-overlay');
+  if (old) old.remove();
+  const overlay = document.createElement('div');
+  overlay.id = 'admin-dialog-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(2,6,23,0.65);display:flex;align-items:center;justify-content:center;z-index:9999;padding:1rem;';
+  const icon = type === 'success' ? '✅' : 'ℹ️';
+  const card = document.createElement('div');
+  card.style.cssText = 'max-width:430px;width:100%;background:linear-gradient(140deg,#0f172a,#1e293b);border:1px solid rgba(11,99,230,0.5);border-radius:14px;padding:1rem;color:#e2e8f0;';
+  card.innerHTML = `<div style="display:flex;gap:.6rem;align-items:center;margin-bottom:.6rem;"><span style="background:${type==='success'?'rgba(6,214,160,.2)':'rgba(11,99,230,.2)'};width:34px;height:34px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;">${icon}</span><strong>${type==='success'?'Sucesso':'Informação'}</strong></div><p style="margin:0 0 .9rem">${String(message||'').replace(/</g,'&lt;')}</p><button id="admin-dialog-ok" class="primary" style="padding:.5rem .95rem;">OK</button>`;
+  overlay.appendChild(card);
+  document.body.appendChild(overlay);
+  const close=()=>overlay.remove();
+  overlay.addEventListener('click',(e)=>{ if(e.target===overlay) close(); });
+  card.querySelector('#admin-dialog-ok')?.addEventListener('click', close);
+}
+
+function parseFinalFiles(value) {
+  if (!value) return [];
+  if (Array.isArray(value)) return value.filter(Boolean);
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return [];
+    if (trimmed.startsWith('[')) {
+      try { const arr = JSON.parse(trimmed); return Array.isArray(arr) ? arr.filter(Boolean) : []; } catch (_) {}
+    }
+    return [trimmed];
+  }
+  return [];
+}
+
+
 function requireAdmin() {
   if (!authToken) {
     window.location.href = '/login.html';
@@ -25,7 +57,7 @@ function toast(msg) {
     box.classList.add('visible');
     setTimeout(() => box.classList.remove('visible'), 2500);
   } else {
-    alert(msg);
+    showDialogMessage(msg);
   }
 }
 
@@ -119,13 +151,14 @@ async function loadOrders() {
       const card = document.createElement('div');
       card.className = 'card';
 
-      // NEW: show "Documento final submetido" indicator when final_file exists; otherwise show message if paid and awaiting final
+      const finalFiles = parseFinalFiles(order.final_file);
+      const finalLinks = finalFiles.length ? finalFiles.map((f) => `<a href="${f}" target="_blank" rel="noopener noreferrer">${f.split('/').pop()}</a>`).join(', ') : '';
       card.innerHTML = `
         <h4>#${order.id} · ${order.tipo || '—'}</h4>
         <p>Cliente: ${order.user_name || ''} (${order.user_email || ''})</p>
         <p>Estado: <strong>${order.estado || '—'}</strong> · Fatura: ${invoiceNumber || '—'} (${invoiceEstado})</p>
         <p>Total: ${order.valor_total ?? (order.invoice_details && order.invoice_details.valor_total) ?? '—'}</p>
-        ${order.final_file ? `<p class="success">Documento final submetido: <a href="${order.final_file}" target="_blank">ver/baixar</a></p>` : (invoiceEstado === 'PAGA' ? `<p class="muted">Aguardando entrega final</p>` : '')}
+        ${finalFiles.length ? `<p class="success">Documento(s) final(is) submetido(s): ${finalLinks}</p>` : (invoiceEstado === 'PAGA' ? `<p class="muted">Aguardando entrega final</p>` : '')}
         <p>Materiais: ${materials.length ? materials.map((m) => `<a href="${m}" target="_blank" rel="noopener noreferrer">${m.split('/').pop()}</a>`).join(', ') : 'Nenhum'}</p>
         ${comprovativo ? `<p class="muted">Comprovativo: <a href="${comprovativo}" target="_blank" rel="noopener noreferrer">ver ficheiro</a></p>` : '<p class="muted">Comprovativo pendente</p>'}
         <div class="stacked-actions" style="margin-top:8px;"></div>
@@ -171,10 +204,10 @@ async function loadOrders() {
       }
 
       // If invoice paid and no final_file yet, show upload control
-      if ((invoiceEstado === 'PAGA') && !order.final_file) {
+      if ((invoiceEstado === 'PAGA') && finalFiles.length === 0) {
         const uploadWrap = document.createElement('div');
         uploadWrap.className = 'upload-zone';
-        uploadWrap.innerHTML = `<label>Entregar documento final</label><input type="file" data-file="${order.id}" /><button class="primary" data-action="final" data-order="${order.id}">Submeter</button>`;
+        uploadWrap.innerHTML = `<label>Entregar documento(s) final(is)</label><input type="file" data-file="${order.id}" multiple /><button class="primary" data-action="final" data-order="${order.id}">Submeter</button>`;
         const inputFile = uploadWrap.querySelector(`input[data-file="${order.id}"]`);
         const finalBtn = uploadWrap.querySelector('button');
         finalBtn.onclick = () => uploadFinal(finalBtn.dataset.order, inputFile);
@@ -252,12 +285,12 @@ async function rejectInvoice(invoiceId, orderId) {
 }
 
 async function uploadFinal(orderId, input) {
-  if (!input?.files?.length) return toast('Selecione um ficheiro primeiro');
+  if (!input?.files?.length) return toast('Selecione pelo menos um ficheiro');
   const ok = await confirmAction('Entregar este documento ao cliente?');
   if (!ok) return;
   const form = new FormData();
   form.set('order_id', orderId);
-  form.append('final', input.files[0]);
+  Array.from(input.files).forEach((file) => form.append('final', file));
   const btn = document.querySelector(`button[data-action=\"final\"][data-order=\"${orderId}\"]`);
   const progress = window.UploadUtils?.ensureProgressUI(input.closest('.upload-zone') || input.parentElement);
   try {
@@ -269,7 +302,8 @@ async function uploadFinal(orderId, input) {
       onProgress: (pct) => window.UploadUtils.setProgress(progress, pct, 'A enviar entrega final...'),
     });
     if (!result.ok) return toast(result.data.message || 'Erro ao enviar documento');
-    toast('Documento final submetido.');
+    toast('Documento(s) final(is) submetido(s).');
+    if (input) input.value = '';
     await loadOrders();
   } finally {
     if (btn) btn.disabled = false;
