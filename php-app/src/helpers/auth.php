@@ -8,6 +8,24 @@ use App\Models\User;
 
 class Auth
 {
+
+    private static function jwtSecret(): string
+    {
+        $raw = (string) Config::get('JWT_SECRET', '');
+        if ($raw === '') {
+            $raw = 'livre-se-das-tarefas-default-secret';
+            error_log('JWT_SECRET ausente; a usar segredo derivado temporário. Configure JWT_SECRET no ambiente.');
+        }
+
+        // firebase/php-jwt >=7 exige chave HMAC com comprimento adequado.
+        // Para manter compatibilidade com segredos legados curtos, derivamos 32 bytes estáveis.
+        if (strlen($raw) < 32) {
+            return hash('sha256', $raw, true);
+        }
+
+        return $raw;
+    }
+
     public static function issueToken(array $user): string
     {
         $payload = [
@@ -17,7 +35,7 @@ class Auth
             'iat' => time(),
             'exp' => time() + 60 * 60 * 24 * 3
         ];
-        return JWT::encode($payload, Config::get('JWT_SECRET'), 'HS256');
+        return JWT::encode($payload, self::jwtSecret(), 'HS256');
     }
 
     public static function requireUser(): array
@@ -30,7 +48,7 @@ class Auth
         }
         $token = substr($authHeader, 7);
         try {
-            $decoded = JWT::decode($token, new Key(Config::get('JWT_SECRET'), 'HS256'));
+            $decoded = JWT::decode($token, new Key(self::jwtSecret(), 'HS256'));
             $user = User::findById($decoded->sub);
             if (!$user || !$user['active']) {
                 Response::json(['message' => 'Conta inativa ou inexistente'], 401);
@@ -53,7 +71,7 @@ class Auth
         }
         $token = substr($authHeader, 7);
         try {
-            $decoded = JWT::decode($token, new Key(Config::get('JWT_SECRET'), 'HS256'));
+            $decoded = JWT::decode($token, new Key(self::jwtSecret(), 'HS256'));
             $user = User::findById($decoded->sub);
             if (!$user || !$user['active']) {
                 return null;
