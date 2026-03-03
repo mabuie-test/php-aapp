@@ -60,6 +60,28 @@
       color: var(--accent);
       flex-shrink: 0;
     }
+    .admin-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 24px;
+      height: 24px;
+      padding: 0 8px;
+      margin-left: 0.45rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      color: #fff;
+      background: linear-gradient(135deg, #0b63e6, #7c3aed);
+      box-shadow: 0 4px 14px rgba(11,99,230,0.35);
+      border: 1px solid rgba(255,255,255,0.25);
+      animation: badgePulse 1.8s ease-in-out infinite;
+    }
+    .admin-badge.hidden { display: none; }
+    @keyframes badgePulse {
+      0%,100% { transform: scale(1); }
+      50% { transform: scale(1.08); }
+    }
 
     /* FOOTER – ÍCONES SEM AUMENTAR ESPAÇAMENTO */
     .footer strong i {
@@ -120,13 +142,13 @@
       <p class="muted">Clique para aceder às páginas dedicadas. Cada módulo abre separado para manter o painel organizado.</p>
     </section>
 
-    <a class="card link-card" href="/admin-orders.html">
-      <h3><i class="fas fa-shopping-cart"></i> Gestão de encomendas</h3>
-      <p class="muted">Validar pagamentos, ver materiais, entregar ficheiros finais.</p>
+    <a class="card link-card" id="dash-link-orders" href="/admin-orders.html">
+      <h3><i class="fas fa-shopping-cart"></i> Gestão de encomendas <span id="dash-badge-orders" class="admin-badge hidden">0</span></h3>
+      <p class="muted">Validar pagamentos, ver materiais, entregar ficheiros finais. <span id="dash-badge-secondary" class="admin-badge hidden" style="height:20px;min-width:20px;font-size:.7rem;vertical-align:middle;">0</span> <span class="muted" style="font-size:.82rem;">novos de ensino secundário</span></p>
     </a>
 
-    <a class="card link-card" href="/admin-services.html">
-      <h3><i class="fas fa-cogs"></i> Serviços especializados</h3>
+    <a class="card link-card" id="dash-link-services" href="/admin-services.html">
+      <h3><i class="fas fa-cogs"></i> Serviços especializados <span id="dash-badge-services" class="admin-badge hidden">0</span></h3>
       <p class="muted">Revisões, estatísticas, apresentações, CVs, plágio, resumos e Ensino à Distância VIP.</p>
     </a>
 

@@ -6,6 +6,81 @@ let servicesChart;
 const adminPage = document.body.dataset.page || 'dashboard';
 let currentServiceFilter = 'all';
 
+const SEEN_KEYS = {
+  orders: 'admin_seen_order_id',
+  services: 'admin_seen_service_id',
+  secondary: 'admin_seen_secondary_order_id',
+};
+
+function toInt(v) {
+  const n = Number(v || 0);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function setBadge(el, count) {
+  if (!el) return;
+  if (count > 0) {
+    el.textContent = String(count);
+    el.classList.remove('hidden');
+  } else {
+    el.textContent = '0';
+    el.classList.add('hidden');
+  }
+}
+
+async function updateDashboardUnseenBadges() {
+  if (!requireAdmin()) return;
+  const ordersBadge = document.getElementById('dash-badge-orders');
+  const servicesBadge = document.getElementById('dash-badge-services');
+  const secondaryBadge = document.getElementById('dash-badge-secondary');
+  if (!ordersBadge && !servicesBadge && !secondaryBadge) return;
+
+  try {
+    const [ordersRes, servicesRes] = await Promise.all([
+      fetch(`${apiBase}/admin/orders`, { headers: { Authorization: `Bearer ${authToken}` } }),
+      fetch(`${apiBase}/admin/services`, { headers: { Authorization: `Bearer ${authToken}` } }),
+    ]);
+    const ordersData = await ordersRes.json();
+    const servicesData = await servicesRes.json();
+
+    const orders = Array.isArray(ordersData.orders) ? ordersData.orders : [];
+    const services = Array.isArray(servicesData.services) ? servicesData.services : [];
+
+    const seenOrderId = toInt(localStorage.getItem(SEEN_KEYS.orders));
+    const seenServiceId = toInt(localStorage.getItem(SEEN_KEYS.services));
+    const seenSecondaryId = toInt(localStorage.getItem(SEEN_KEYS.secondary));
+
+    const newOrders = orders.filter((o) => toInt(o.id) > seenOrderId).length;
+    const newServices = services.filter((s) => toInt(s.id) > seenServiceId).length;
+
+    const secondaryOrders = orders.filter((o) => String(o.tipo || '').toLowerCase().includes('auxilio_secundario'));
+    const newSecondary = secondaryOrders.filter((o) => toInt(o.id) > seenSecondaryId).length;
+
+    setBadge(ordersBadge, newOrders);
+    setBadge(servicesBadge, newServices);
+    setBadge(secondaryBadge, newSecondary);
+
+    const maxOrderId = orders.reduce((m, o) => Math.max(m, toInt(o.id)), 0);
+    const maxServiceId = services.reduce((m, s) => Math.max(m, toInt(s.id)), 0);
+    const maxSecondaryId = secondaryOrders.reduce((m, o) => Math.max(m, toInt(o.id)), 0);
+
+    document.getElementById('dash-link-orders')?.addEventListener('click', () => {
+      localStorage.setItem(SEEN_KEYS.orders, String(maxOrderId));
+      localStorage.setItem(SEEN_KEYS.secondary, String(maxSecondaryId));
+      setBadge(ordersBadge, 0);
+      setBadge(secondaryBadge, 0);
+    }, { once: true });
+
+    document.getElementById('dash-link-services')?.addEventListener('click', () => {
+      localStorage.setItem(SEEN_KEYS.services, String(maxServiceId));
+      setBadge(servicesBadge, 0);
+    }, { once: true });
+  } catch (e) {
+    console.error('Erro ao atualizar badges do dashboard', e);
+  }
+}
+
+
 function showDialogMessage(message, type = 'info') {
   const old = document.getElementById('admin-dialog-overlay');
   if (old) old.remove();
@@ -155,7 +230,7 @@ async function loadOrders() {
       const finalFiles = parseFinalFiles(order.final_file);
       const finalLinks = finalFiles.length ? finalFiles.map((f) => `<a href="${f}" target="_blank" rel="noopener noreferrer">${f.split('/').pop()}</a>`).join(', ') : '';
       card.innerHTML = `
-        <h4>#${order.id} · ${order.tipo || '—'}</h4>
+        <h4>#${order.id} · ${order.tipo || '—'} ${String(order.tipo || '').toLowerCase().includes('auxilio_secundario') ? '<span class="badge" style="margin-left:.35rem">Ensino Secundário</span>' : ''}</h4>
         <p>Cliente: ${order.user_name || ''} (${order.user_email || ''})</p>
         <p>Estado: <strong>${order.estado || '—'}</strong> · Fatura: ${invoiceNumber || '—'} (${invoiceEstado})</p>
         <p>Total: ${order.valor_total ?? (order.invoice_details && order.invoice_details.valor_total) ?? '—'}</p>
@@ -709,6 +784,16 @@ switch (adminPage) {
     loadMetrics();
     loadAudits();
     loadFeedbackAdmin();
+    fetch(`${apiBase}/admin/orders`, { headers: { Authorization: `Bearer ${authToken}` } })
+      .then((r) => r.json())
+      .then((d) => {
+        const orders = Array.isArray(d.orders) ? d.orders : [];
+        const maxOrderId = orders.reduce((m, o) => Math.max(m, toInt(o.id)), 0);
+        const secondary = orders.filter((o) => String(o.tipo || '').toLowerCase().includes('auxilio_secundario'));
+        const maxSecondaryId = secondary.reduce((m, o) => Math.max(m, toInt(o.id)), 0);
+        localStorage.setItem(SEEN_KEYS.orders, String(maxOrderId));
+        localStorage.setItem(SEEN_KEYS.secondary, String(maxSecondaryId));
+      }).catch(() => {});
     setInterval(() => {
       loadOrders();
       loadMetrics();
@@ -724,6 +809,13 @@ switch (adminPage) {
       });
     });
     loadServices();
+    fetch(`${apiBase}/admin/services`, { headers: { Authorization: `Bearer ${authToken}` } })
+      .then((r) => r.json())
+      .then((d) => {
+        const services = Array.isArray(d.services) ? d.services : [];
+        const maxServiceId = services.reduce((m, s) => Math.max(m, toInt(s.id)), 0);
+        localStorage.setItem(SEEN_KEYS.services, String(maxServiceId));
+      }).catch(() => {});
     setInterval(loadServices, 20000);
     break;
   case 'users':
@@ -763,6 +855,7 @@ switch (adminPage) {
   default:
     loadMetrics();
     loadAudits();
+    updateDashboardUnseenBadges();
 }
 
 async function loadGrowthInsights() {
