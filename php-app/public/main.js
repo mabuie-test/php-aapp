@@ -873,6 +873,13 @@ document.addEventListener('DOMContentLoaded', function() {
       refNode ? nav.insertBefore(toolsLink, refNode.nextSibling) : nav.appendChild(toolsLink);
     }
 
+
+    const vipLink = makeLink('nav-vip', '/vip-distance.html', 'Ensino VIP');
+    if (vipLink) {
+      const refVip = nav.querySelector('a[href="/services.html"]') || nav.querySelector('a[href="/order.html"]') || null;
+      refVip ? nav.insertBefore(vipLink, refVip.nextSibling) : nav.appendChild(vipLink);
+    }
+
     // Carreira: preferível exigir autenticação (auth-only)
     const careerLink = makeLink('nav-career', '/career.html', 'Carreira & Estágios', 'auth-only');
     if (careerLink) {
