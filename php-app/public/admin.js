@@ -5,6 +5,7 @@ let revenueChart;
 let servicesChart;
 const adminPage = document.body.dataset.page || 'dashboard';
 let currentServiceFilter = 'all';
+let currentAuditPage = 1;
 
 const SEEN_KEYS = {
   orders: 'admin_seen_order_id',
@@ -635,22 +636,67 @@ async function updatePayout(payoutId, status, itemEl = null) {
   loadCommissions();
 }
 
-async function loadAudits() {
-  const res = await fetch(`${apiBase}/admin/audits`, { headers: { Authorization: `Bearer ${authToken}` } });
+async function loadAudits(page = currentAuditPage) {
+  currentAuditPage = Math.max(1, Number(page) || 1);
+  const res = await fetch(`${apiBase}/admin/audits?page=${currentAuditPage}&per_page=20`, { headers: { Authorization: `Bearer ${authToken}` } });
   const data = await res.json();
   const list = document.getElementById('admin-audits');
+  const pager = document.getElementById('audit-pagination');
+  const summary = document.getElementById('audit-summary');
   if (!list) return;
   if (!res.ok) {
     list.innerHTML = `<p class="muted">${data.message || 'Erro'}</p>`;
+    if (pager) pager.innerHTML = '';
+    if (summary) summary.textContent = '';
     return;
   }
+
+  const audits = Array.isArray(data.audits) ? data.audits : [];
+  const pg = data.pagination || { page: 1, pages: 1, total: audits.length, per_page: 20 };
+
   list.innerHTML = '';
-  (data.audits || []).forEach((a) => {
+  audits.forEach((a, idx) => {
     const item = document.createElement('div');
     item.className = 'list-item';
-    item.innerHTML = `<div><strong>${a.action}</strong><p class="muted">${a.email || 'anónimo'} · ${a.meta}</p></div><span class="badge">${a.created_at || ''}</span>`;
+    const globalIndex = ((pg.page - 1) * pg.per_page) + idx + 1;
+    item.innerHTML = `<div><strong>#${globalIndex} · ${a.action}</strong><p class="muted">${a.email || 'anónimo'} · ${a.meta}</p></div><span class="badge">${a.created_at || ''}</span>`;
     list.appendChild(item);
   });
+
+  if (summary) {
+    const start = audits.length ? ((pg.page - 1) * pg.per_page + 1) : 0;
+    const end = (pg.page - 1) * pg.per_page + audits.length;
+    summary.textContent = `Página ${pg.page} de ${pg.pages} · itens ${start}-${end} de ${pg.total}`;
+  }
+
+  if (pager) {
+    pager.innerHTML = '';
+    const totalPages = Number(pg.pages) || 1;
+    const current = Number(pg.page) || 1;
+
+    function makeBtn(label, target, active = false) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = active ? 'primary' : 'ghost';
+      b.textContent = label;
+      b.disabled = target < 1 || target > totalPages || target === current;
+      b.addEventListener('click', () => loadAudits(target));
+      return b;
+    }
+
+    pager.appendChild(makeBtn('«', current - 1));
+
+    const windowSize = 5;
+    let start = Math.max(1, current - Math.floor(windowSize / 2));
+    let end = Math.min(totalPages, start + windowSize - 1);
+    if (end - start + 1 < windowSize) start = Math.max(1, end - windowSize + 1);
+
+    for (let i = start; i <= end; i += 1) {
+      pager.appendChild(makeBtn(String(i), i, i === current));
+    }
+
+    pager.appendChild(makeBtn('»', current + 1));
+  }
 }
 
 async function loadFeedbackAdmin() {
@@ -801,7 +847,6 @@ switch (adminPage) {
   case 'orders':
     loadOrders();
     loadMetrics();
-    loadAudits();
     loadFeedbackAdmin();
     fetch(`${apiBase}/admin/orders`, { headers: { Authorization: `Bearer ${authToken}` } })
       .then((r) => r.json())
@@ -816,7 +861,6 @@ switch (adminPage) {
     setInterval(() => {
       loadOrders();
       loadMetrics();
-      loadAudits();
       loadFeedbackAdmin();
     }, 20000);
     break;
@@ -842,11 +886,9 @@ switch (adminPage) {
     break;
   case 'metrics':
     loadMetrics();
-    loadAudits();
     loadGrowthInsights();
     setInterval(() => {
       loadMetrics();
-      loadAudits();
       loadGrowthInsights();
     }, 20000);
     break;
@@ -858,6 +900,9 @@ switch (adminPage) {
       loadCommissions();
       loadPayouts();
     }, 20000);
+    break;
+  case 'audits':
+    loadAudits(1);
     break;
   case 'chat':
     loadAdminChat();
@@ -873,7 +918,6 @@ switch (adminPage) {
     break;
   default:
     loadMetrics();
-    loadAudits();
     updateDashboardUnseenBadges();
 }
 

@@ -55,4 +55,22 @@ class Audit
         $stmt->execute();
         return $stmt->fetchAll();
     }
+
+    public static function countAll(): int
+    {
+        return (int) Database::pdo()->query('SELECT COUNT(*) FROM audits')->fetchColumn();
+    }
+
+    public static function listPage(int $page = 1, int $perPage = 20): array
+    {
+        $page = max(1, $page);
+        $perPage = max(1, min(100, $perPage));
+        $offset = ($page - 1) * $perPage;
+
+        $stmt = Database::pdo()->prepare('SELECT a.*, u.email FROM audits a LEFT JOIN users u ON u.id = a.user_id ORDER BY a.id DESC LIMIT :lim OFFSET :off');
+        $stmt->bindValue(':lim', $perPage, \PDO::PARAM_INT);
+        $stmt->bindValue(':off', $offset, \PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
 }

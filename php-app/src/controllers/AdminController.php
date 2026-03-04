@@ -945,7 +945,24 @@ public static function payouts(): void
     public static function audits(): void
     {
         self::requireAdmin();
-        Response::json(['audits' => Audit::listRecent()]);
+        $page = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
+        $perPage = isset($_GET['per_page']) ? (int) $_GET['per_page'] : 20;
+        $perPage = max(1, min(100, $perPage));
+
+        $total = Audit::countAll();
+        $pages = max(1, (int) ceil($total / $perPage));
+        if ($page > $pages) $page = $pages;
+
+        $audits = Audit::listPage($page, $perPage);
+        Response::json([
+            'audits' => $audits,
+            'pagination' => [
+                'page' => $page,
+                'per_page' => $perPage,
+                'total' => $total,
+                'pages' => $pages,
+            ],
+        ]);
     }
 
     public static function chatMessages(): void
