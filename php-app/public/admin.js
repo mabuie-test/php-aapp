@@ -6,6 +6,7 @@ let servicesChart;
 const adminPage = document.body.dataset.page || 'dashboard';
 let currentServiceFilter = 'all';
 let currentAuditPage = 1;
+let uploadingFinalInProgress = false;
 
 const SEEN_KEYS = {
   orders: 'admin_seen_order_id',
@@ -388,6 +389,7 @@ async function uploadFinal(orderId, input, meta = null, actionBtn = null) {
   const btn = actionBtn || document.querySelector(`button[data-action=\"final\"][data-order=\"${orderId}\"]`);
   const progress = window.UploadUtils?.ensureProgressUI(input.closest('.upload-zone') || input.parentElement);
   try {
+    uploadingFinalInProgress = true;
     if (btn) btn.disabled = true;
     const result = await window.UploadUtils.uploadWithProgress(`${apiBase}/admin/orders/final-upload`, {
       method: 'POST',
@@ -402,9 +404,19 @@ async function uploadFinal(orderId, input, meta = null, actionBtn = null) {
     if (btn) btn.disabled = true;
     await loadOrders();
   } finally {
+    uploadingFinalInProgress = false;
     if (btn) btn.disabled = false;
     if (progress) window.UploadUtils.hideProgress(progress);
   }
+}
+
+function shouldPauseOrdersAutoRefresh() {
+  if (uploadingFinalInProgress) return true;
+  const inputs = document.querySelectorAll('input[data-file][type="file"]');
+  for (const input of inputs) {
+    if (input?.files?.length) return true;
+  }
+  return false;
 }
 
 async function loadUsers() {
@@ -859,6 +871,7 @@ switch (adminPage) {
         localStorage.setItem(SEEN_KEYS.secondary, String(maxSecondaryId));
       }).catch(() => {});
     setInterval(() => {
+      if (shouldPauseOrdersAutoRefresh()) return;
       loadOrders();
       loadMetrics();
       loadFeedbackAdmin();

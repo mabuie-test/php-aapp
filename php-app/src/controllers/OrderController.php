@@ -46,9 +46,22 @@ class OrderController
         $data = $_POST;
         $exerciseCount = (int) ($data['exercicios'] ?? 0);
         $isExercisePricing = (($data['tipo'] ?? '') === 'auxilio_secundario') || $exerciseCount > 0;
+
+        if ($isExercisePricing && $exerciseCount <= 0) {
+            Response::json(['message' => 'Informe o número de alíneas/exercícios'], 400);
+            return;
+        }
+        if (!$isExercisePricing && (int) ($data['paginas'] ?? 0) <= 0) {
+            Response::json(['message' => 'Informe o número de páginas'], 400);
+            return;
+        }
+
         $quote = $isExercisePricing
             ? Pricing::quoteExercises($exerciseCount)
             : Pricing::quote((int) ($data['paginas'] ?? 0), $data['nivel'] ?? '', $data['complexidade'] ?? '', $data['urgencia'] ?? '');
+
+        $deadline = trim((string) ($data['prazo_entrega'] ?? ''));
+        $deadline = $deadline !== '' ? $deadline : null;
 
         $materialsFiles = [];
         if (!empty($_FILES['materiais_uploads']['name'][0])) {
@@ -108,23 +121,29 @@ class OrderController
             }
         }
 
-        $orderId = Order::create([
-            'user_id' => $user['id'],
-            'tipo' => $data['tipo'] ?? '',
-            'area' => $data['area'] ?? '',
-            'nivel' => $data['nivel'] ?? '',
-            'paginas' => $isExercisePricing ? max(1, $exerciseCount) : (int) ($data['paginas'] ?? 0),
-            'norma' => $data['norma'] ?? null,
-            'complexidade' => $data['complexidade'] ?? null,
-            'urgencia' => $data['urgencia'] ?? null,
-            'descricao' => trim(($data['descricao'] ?? '') . ($isExercisePricing ? ("\n\n[AUXÍLIO SECUNDÁRIO] Alíneas/exercícios: " . max(1, $exerciseCount) . ' · Taxa unitária: ' . ($quote['unitPrice'] ?? 5) . ' MZN') : '')),
-            'estado' => 'PENDENTE_PAGAMENTO',
-            'prazo_entrega' => $data['prazo_entrega'] ?? null,
-            'referred_by_code' => $refCode,
-            'materiais_info' => $data['materiais_info'] ?? null,
-            'materiais_percentual' => $data['materiais_percentual'] ?? null,
-            'materiais_uploads' => $materialsFiles ? json_encode($materialsFiles) : null,
-        ]);
+        try {
+            $orderId = Order::create([
+                'user_id' => $user['id'],
+                'tipo' => $data['tipo'] ?? '',
+                'area' => $data['area'] ?? '',
+                'nivel' => $data['nivel'] ?? '',
+                'paginas' => $isExercisePricing ? max(1, $exerciseCount) : (int) ($data['paginas'] ?? 0),
+                'norma' => $data['norma'] ?? null,
+                'complexidade' => $data['complexidade'] ?? null,
+                'urgencia' => $data['urgencia'] ?? null,
+                'descricao' => trim(($data['descricao'] ?? '') . ($isExercisePricing ? ("\n\n[AUXÍLIO SECUNDÁRIO] Alíneas/exercícios: " . max(1, $exerciseCount) . ' · Taxa unitária: ' . ($quote['unitPrice'] ?? 5) . ' MZN') : '')),
+                'estado' => 'PENDENTE_PAGAMENTO',
+                'prazo_entrega' => $deadline,
+                'referred_by_code' => $refCode,
+                'materiais_info' => $data['materiais_info'] ?? null,
+                'materiais_percentual' => $data['materiais_percentual'] ?? null,
+                'materiais_uploads' => $materialsFiles ? json_encode($materialsFiles) : null,
+            ]);
+        } catch (\Throwable $e) {
+            error_log('Order create failed: ' . $e->getMessage());
+            Response::json(['message' => 'Não foi possível criar a encomenda. Verifique os dados e tente novamente.'], 500);
+            return;
+        }
 
         $invoiceNumber = 'FAT-' . str_pad((string) $orderId, 6, '0', STR_PAD_LEFT);
         $invoiceId = Invoice::create([

@@ -6,6 +6,23 @@ use PDO;
 
 class Order
 {
+    private static ?array $cachedColumns = null;
+
+    private static function availableColumns(): array
+    {
+        if (self::$cachedColumns !== null) {
+            return self::$cachedColumns;
+        }
+        $stmt = Database::pdo()->query('DESCRIBE orders');
+        $cols = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            if (!empty($row['Field'])) {
+                $cols[] = $row['Field'];
+            }
+        }
+        self::$cachedColumns = $cols;
+        return $cols;
+    }
     /**
      * Cria uma nova encomenda
      *
@@ -19,35 +36,41 @@ class Order
     public static function create(array $data): int
     {
         $pdo = Database::pdo();
-        $sql = 'INSERT INTO orders (
-            user_id, tipo, area, nivel, paginas, norma, complexidade, urgencia,
-            descricao, estado, prazo_entrega, referred_by_code, materiais_info,
-            materiais_percentual, materiais_uploads, invoice_id, final_file
-        ) VALUES (
-            :user_id, :tipo, :area, :nivel, :paginas, :norma, :complexidade, :urgencia,
-            :descricao, :estado, :prazo_entrega, :referred_by_code, :materiais_info,
-            :materiais_percentual, :materiais_uploads, :invoice_id, :final_file
-        )';
+        $defaults = [
+            'user_id' => $data['user_id'],
+            'tipo' => $data['tipo'] ?? '',
+            'area' => $data['area'] ?? '',
+            'nivel' => $data['nivel'] ?? '',
+            'paginas' => $data['paginas'] ?? 1,
+            'norma' => $data['norma'] ?? null,
+            'complexidade' => $data['complexidade'] ?? 'basica',
+            'urgencia' => $data['urgencia'] ?? 'normal',
+            'descricao' => $data['descricao'] ?? '',
+            'estado' => $data['estado'] ?? 'PENDENTE_PAGAMENTO',
+            'prazo_entrega' => $data['prazo_entrega'] ?? null,
+            'referred_by_code' => $data['referred_by_code'] ?? null,
+            'materiais_info' => $data['materiais_info'] ?? null,
+            'materiais_percentual' => $data['materiais_percentual'] ?? null,
+            'materiais_uploads' => $data['materiais_uploads'] ?? null,
+            'invoice_id' => $data['invoice_id'] ?? null,
+            'final_file' => $data['final_file'] ?? null,
+        ];
+
+        $available = array_flip(self::availableColumns());
+        $fields = [];
+        $bindings = [];
+        foreach ($defaults as $field => $value) {
+            if (!isset($available[$field])) {
+                continue;
+            }
+            $fields[] = $field;
+            $bindings[":" . $field] = $value;
+        }
+
+        $placeholders = array_map(fn($f) => ':' . $f, $fields);
+        $sql = 'INSERT INTO orders (' . implode(', ', $fields) . ') VALUES (' . implode(', ', $placeholders) . ')';
         $stmt = $pdo->prepare($sql);
-        $stmt->execute([
-            ':user_id' => $data['user_id'],
-            ':tipo' => $data['tipo'] ?? '',
-            ':area' => $data['area'] ?? '',
-            ':nivel' => $data['nivel'] ?? '',
-            ':paginas' => $data['paginas'] ?? 1,
-            ':norma' => $data['norma'] ?? null,
-            ':complexidade' => $data['complexidade'] ?? 'basica',
-            ':urgencia' => $data['urgencia'] ?? 'normal',
-            ':descricao' => $data['descricao'] ?? '',
-            ':estado' => $data['estado'] ?? 'PENDENTE_PAGAMENTO',
-            ':prazo_entrega' => $data['prazo_entrega'] ?? null,
-            ':referred_by_code' => $data['referred_by_code'] ?? null,
-            ':materiais_info' => $data['materiais_info'] ?? null,
-            ':materiais_percentual' => $data['materiais_percentual'] ?? null,
-            ':materiais_uploads' => $data['materiais_uploads'] ?? null,
-            ':invoice_id' => $data['invoice_id'] ?? null,
-            ':final_file' => $data['final_file'] ?? null
-        ]);
+        $stmt->execute($bindings);
         return (int) $pdo->lastInsertId();
     }
 
