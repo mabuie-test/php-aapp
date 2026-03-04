@@ -283,10 +283,27 @@ async function loadOrders() {
       if ((invoiceEstado === 'PAGA') && finalFiles.length === 0) {
         const uploadWrap = document.createElement('div');
         uploadWrap.className = 'upload-zone';
-        uploadWrap.innerHTML = `<label>Entregar documento(s) final(is)</label><input type="file" data-file="${order.id}" multiple /><button class="primary" data-action="final" data-order="${order.id}">Submeter</button>`;
+        uploadWrap.innerHTML = `
+          <label>Entregar documento(s) final(is)</label>
+          <input type="file" name="final[]" data-file="${order.id}" multiple />
+          <p class="muted" data-file-meta="${order.id}">Nenhum ficheiro selecionado.</p>
+          <button class="primary" data-action="final" data-order="${order.id}" disabled>Submeter</button>
+        `;
         const inputFile = uploadWrap.querySelector(`input[data-file="${order.id}"]`);
+        const meta = uploadWrap.querySelector(`[data-file-meta="${order.id}"]`);
         const finalBtn = uploadWrap.querySelector('button');
-        finalBtn.onclick = () => uploadFinal(finalBtn.dataset.order, inputFile);
+        if (inputFile) {
+          inputFile.addEventListener('change', () => {
+            const files = Array.from(inputFile.files || []);
+            if (meta) {
+              meta.textContent = files.length
+                ? `${files.length} ficheiro(s): ${files.map((f) => f.name).join(', ')}`
+                : 'Nenhum ficheiro selecionado.';
+            }
+            if (finalBtn) finalBtn.disabled = files.length === 0;
+          });
+        }
+        finalBtn.onclick = () => uploadFinal(finalBtn.dataset.order, inputFile, meta, finalBtn);
         card.appendChild(uploadWrap);
       }
 
@@ -360,14 +377,14 @@ async function rejectInvoice(invoiceId, orderId) {
   await loadMetrics();
 }
 
-async function uploadFinal(orderId, input) {
+async function uploadFinal(orderId, input, meta = null, actionBtn = null) {
   if (!input?.files?.length) return toast('Selecione pelo menos um ficheiro');
   const ok = await confirmAction('Entregar este documento ao cliente?');
   if (!ok) return;
   const form = new FormData();
   form.set('order_id', orderId);
-  Array.from(input.files).forEach((file) => form.append('final', file));
-  const btn = document.querySelector(`button[data-action=\"final\"][data-order=\"${orderId}\"]`);
+  Array.from(input.files).forEach((file) => form.append('final[]', file));
+  const btn = actionBtn || document.querySelector(`button[data-action=\"final\"][data-order=\"${orderId}\"]`);
   const progress = window.UploadUtils?.ensureProgressUI(input.closest('.upload-zone') || input.parentElement);
   try {
     if (btn) btn.disabled = true;
@@ -380,6 +397,8 @@ async function uploadFinal(orderId, input) {
     if (!result.ok) return toast(result.data.message || 'Erro ao enviar documento');
     toast('Documento(s) final(is) submetido(s).');
     if (input) input.value = '';
+    if (meta) meta.textContent = 'Nenhum ficheiro selecionado.';
+    if (btn) btn.disabled = true;
     await loadOrders();
   } finally {
     if (btn) btn.disabled = false;
