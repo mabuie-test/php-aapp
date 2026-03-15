@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pagamento automático - Livre-se das Tarefas</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="invoice-page">
+  <header>
+    <h1>Pagamento automático da fatura</h1>
+    <nav class="navbar">
+      <div class="nav-links">
+        <a id="back-invoice-link" href="/invoice.html">Voltar à fatura</a>
+        <button id="logout" class="ghost">Terminar sessão</button>
+      </div>
+    </nav>
+  </header>
+
+  <div class="container narrow" id="payment-method-container">
+    <div class="card">
+      <h3>Escolha o método</h3>
+      <p class="muted">Clique no ícone do serviço para iniciar o débito automático.</p>
+      <div class="payment-options">
+        <button type="button" class="payment-card" data-method="mpesa">
+          <span class="payment-logo mpesa">M</span>
+          <span>M-Pesa</span>
+        </button>
+        <button type="button" class="payment-card" data-method="emola">
+          <span class="payment-logo emola">e</span>
+          <span>eMola</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="card hidden" id="payment-form-card">
+      <h3 id="payment-title">Pagamento</h3>
+      <p class="muted" id="payment-help"></p>
+      <form id="payment-form" class="stacked-actions">
+        <label for="payment-amount">Valor (MZN)</label>
+        <input id="payment-amount" name="amount" type="number" step="0.01" min="1" required />
+
+        <label for="payment-msisdn">Número de pagamento</label>
+        <input id="payment-msisdn" name="msisdn" type="tel" inputmode="numeric" placeholder="84xxxxxxx" pattern="8[0-9]{8}" required />
+
+        <label for="payment-reference">Referência</label>
+        <input id="payment-reference" name="reference_description" type="text" maxlength="100" />
+
+        <button type="submit" class="primary">Confirmar pagamento</button>
+      </form>
+      <p id="payment-result" class="muted"></p>
+    </div>
+  </div>
+
+  <script src="payment-method.js"></script>
+</body>
+</html>

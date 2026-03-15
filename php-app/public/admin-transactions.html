@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Transações Débito - Admin</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body class="page" data-page="transactions">
+  <header class="topbar">
+    <div class="brand">Admin · Transações Débito</div>
+    <nav>
+      <a href="/admin.html">Dashboard</a>
+      <a href="/admin-orders.html">Encomendas</a>
+      <a href="/admin-services.html">Serviços</a>
+      <a href="/admin-users.html">Utilizadores</a>
+      <a href="/admin-metrics.html">Métricas</a>
+      <button id="logout" class="ghost">Terminar sessão</button>
+    </nav>
+  </header>
+  <main class="content">
+    <section class="card">
+      <h1>Histórico de transações (M-Pesa/eMola)</h1>
+      <p class="muted">Monitore sucessos, falhas e sinais suspeitos dos pagamentos automáticos.</p>
+      <div class="inline-group" id="debit-summary" style="margin:.6rem 0 1rem;flex-wrap:wrap;"></div>
+      <div id="admin-transactions" class="list"></div>
+      <div class="inline-group" id="transactions-pagination" style="margin-top:1rem;flex-wrap:wrap;"></div>
+      <p id="transactions-summary" class="muted" style="margin-top:0.7rem;"></p>
+    </section>
+  </main>
+  <footer class="footer"><p class="muted">© 2024 Fluxosoftwares</p></footer>
+  <script src="/admin.js"></script>
+  <script src="/nav-mobile.js"></script>
+</body>
+</html>
