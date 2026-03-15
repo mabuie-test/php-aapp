@@ -7,7 +7,17 @@ class DebitoGateway
 {
     private static function baseUrl(): string
     {
-        return rtrim((string) Config::get('DEBITO_BASE_URL', 'http://localhost:9000'), '/');
+        $raw = trim((string) Config::get('DEBITO_BASE_URL', 'http://localhost:9000'));
+        if ($raw === '') {
+            $raw = 'http://localhost:9000';
+        }
+
+        // Em produção, gateways geralmente exigem HTTPS
+        if (str_starts_with($raw, 'http://') && !str_contains($raw, 'localhost') && !str_contains($raw, '127.0.0.1')) {
+            $raw = 'https://' . substr($raw, 7);
+        }
+
+        return rtrim($raw, '/');
     }
 
     private static function normalizedProvider(string $provider): string
@@ -57,6 +67,9 @@ class DebitoGateway
             CURLOPT_SSL_VERIFYHOST => 2,
             CURLOPT_ENCODING => '',
             CURLOPT_TCP_KEEPALIVE => 1,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_MAXREDIRS => 3,
+            CURLOPT_USERAGENT => 'FluxAcademy/1.0 DebitoGateway',
         ]);
 
         $raw = curl_exec($ch);
@@ -73,19 +86,33 @@ class DebitoGateway
         curl_close($ch);
 
         if ($raw === false || $err) {
-            return ['ok' => false, 'status' => 502, 'data' => null, 'message' => 'Falha de comunicação com gateway Débito'];
+            $safeErr = trim((string) $err);
+            return [
+                'ok' => false,
+                'status' => 502,
+                'data' => ['curl_error' => $safeErr],
+                'message' => 'Falha de comunicação com gateway Débito' . ($safeErr !== '' ? (': ' . $safeErr) : ''),
+            ];
         }
 
         $decoded = json_decode($raw, true);
         if (!is_array($decoded)) {
-            $decoded = ['raw' => $raw];
+            $snippet = mb_substr(trim((string) $raw), 0, 180);
+            $decoded = ['raw' => $snippet, 'non_json' => true];
+        }
+
+        $ok = $status >= 200 && $status < 300;
+        $message = $decoded['message'] ?? ($ok ? 'Operação concluída' : ('Erro HTTP ' . $status . ' da Débito API'));
+
+        if (!$ok && !empty($decoded['non_json']) && ($status === 301 || $status === 302 || $status === 307 || $status === 308)) {
+            $message = 'Débito API redirecionou a requisição. Verifique se DEBITO_BASE_URL usa HTTPS.';
         }
 
         return [
-            'ok' => $status >= 200 && $status < 300,
+            'ok' => $ok,
             'status' => $status,
             'data' => $decoded,
-            'message' => $decoded['message'] ?? 'Erro na comunicação com Débito API',
+            'message' => $message,
         ];
     }
 
