@@ -5,6 +5,21 @@ const orderId = params.get('id');
 let selectedMethod = '';
 let orderData = null;
 
+function initPaymentLogos() {
+  document.querySelectorAll('.payment-logo-img').forEach((img) => {
+    img.addEventListener('load', () => {
+      const key = img.getAttribute('data-logo');
+      document.querySelector(`[data-logo-fallback="${key}"]`)?.classList.add('hidden');
+      img.classList.add('loaded');
+    });
+    img.addEventListener('error', () => {
+      const key = img.getAttribute('data-logo');
+      document.querySelector(`[data-logo-fallback="${key}"]`)?.classList.remove('hidden');
+      img.classList.remove('loaded');
+    });
+  });
+}
+
 function requireAuth() {
   if (!authToken) {
     window.location.href = '/login.html';
@@ -72,7 +87,7 @@ document.querySelectorAll('.payment-card').forEach((btn) => {
 
 
 async function waitPaymentConfirmation(debitoReference) {
-  const maxTries = 24; // ~2 min
+  const maxTries = 30; // ~2.5 min
   for (let i = 0; i < maxTries; i += 1) {
     await new Promise((r) => setTimeout(r, 5000));
     const res = await fetch(`${apiBase}/orders/${orderId}/debit-status?debito_reference=${encodeURIComponent(debitoReference || '')}`, {
@@ -84,6 +99,13 @@ async function waitPaymentConfirmation(debitoReference) {
       setResult(data.message || 'Erro ao consultar estado do pagamento', 'error');
       return false;
     }
+
+    const normalized = String(data.status || '').toUpperCase();
+    if (['FAILED', 'REJECTED', 'CANCELLED', 'DECLINED', 'ERROR'].includes(normalized)) {
+      setResult(`Pagamento não concluído (${normalized}). Tente novamente ou contacte o suporte.`, 'error');
+      return false;
+    }
+
     if (data.paid) {
       setResult('Pagamento confirmado com sucesso. A redirecionar para faturas...', 'success');
       setTimeout(() => { window.location.href = '/documents.html'; }, 1200);
@@ -92,7 +114,7 @@ async function waitPaymentConfirmation(debitoReference) {
     const statusTxt = data.status ? ` (${data.status})` : '';
     setResult(`Aguardando confirmação do pagamento${statusTxt}...`);
   }
-  setResult('Pagamento iniciado. Ainda pendente de confirmação. Atualize em alguns instantes.', 'info');
+  setResult('Pagamento iniciado. Ainda pendente de confirmação. Pode verificar novamente em alguns instantes.', 'info');
   return false;
 }
 
@@ -141,4 +163,5 @@ if (form) {
   });
 }
 
+initPaymentLogos();
 loadOrder();

@@ -1892,3 +1892,30 @@ canvas {
 .payment-logo.emola {
   background: #0b63e6;
 }
+
+
+.payment-logo-wrap {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.payment-logo-img {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  display: none;
+  border-radius: 999px;
+  background: #fff;
+}
+
+.payment-logo-img.loaded {
+  display: inline-block;
+}
+
+.payment-logo.hidden {
+  display: none;
+}

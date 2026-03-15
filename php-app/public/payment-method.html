@@ -23,11 +23,17 @@
       <p class="muted">Clique no ícone do serviço para iniciar o débito automático.</p>
       <div class="payment-options">
         <button type="button" class="payment-card" data-method="mpesa">
-          <span class="payment-logo mpesa">M</span>
+          <span class="payment-logo-wrap">
+            <img class="payment-logo-img" data-logo="mpesa" src="/assets/payments/mpesa.png" alt="Logo M-Pesa" />
+            <span class="payment-logo mpesa" data-logo-fallback="mpesa">M</span>
+          </span>
           <span>M-Pesa</span>
         </button>
         <button type="button" class="payment-card" data-method="emola">
-          <span class="payment-logo emola">e</span>
+          <span class="payment-logo-wrap">
+            <img class="payment-logo-img" data-logo="emola" src="/assets/payments/emola.png" alt="Logo eMola" />
+            <span class="payment-logo emola" data-logo-fallback="emola">e</span>
+          </span>
           <span>eMola</span>
         </button>
       </div>
