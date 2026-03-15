@@ -108,7 +108,7 @@ async function waitPaymentConfirmation(debitoReference) {
 
     if (data.paid) {
       setResult('Pagamento confirmado com sucesso. A redirecionar para faturas...', 'success');
-      setTimeout(() => { window.location.href = '/documents.html'; }, 1200);
+      setTimeout(() => { window.location.href = `/invoice.html?id=${orderId}`; }, 1200);
       return true;
     }
     const statusTxt = data.status ? ` (${data.status})` : '';

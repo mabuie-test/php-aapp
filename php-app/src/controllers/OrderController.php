@@ -403,6 +403,12 @@ class OrderController
 
         $provider = is_array($statusResponse['data'] ?? null) ? $statusResponse['data'] : [];
         $status = (string) ($provider['status'] ?? $provider['transaction_status'] ?? '');
+        if ($status === '') {
+            $msg = strtoupper((string) ($provider['message'] ?? ''));
+            if (str_contains($msg, 'SUCESSO') || str_contains($msg, 'SUCCESS')) {
+                $status = 'SUCCESS';
+            }
+        }
         $paid = self::finalizeDebitPayment($order, $status, $debitoReference, [
             'source' => 'status_poll',
             'provider_response' => $provider,
@@ -521,7 +527,7 @@ class OrderController
     private static function statusIsPaid(string $status): bool
     {
         $normalized = strtoupper(trim($status));
-        return in_array($normalized, ['PAID', 'SUCCESS', 'SUCCEEDED', 'COMPLETED', 'APPROVED'], true);
+        return in_array($normalized, ['PAID', 'SUCCESS', 'SUCCEEDED', 'COMPLETED', 'APPROVED', 'SUCCESSFUL', 'DONE', 'CONFIRMED'], true);
     }
 
     public static function debitCallback(): void
@@ -550,6 +556,12 @@ class OrderController
             return;
         }
         $status = (string) ($payload['status'] ?? $payload['transaction_status'] ?? '');
+        if ($status === '') {
+            $msg = strtoupper((string) ($payload['message'] ?? ''));
+            if (str_contains($msg, 'SUCESSO') || str_contains($msg, 'SUCCESS')) {
+                $status = 'SUCCESS';
+            }
+        }
         $orderId = self::parseOrderIdFromDebitoPayload($payload);
 
         if ($orderId <= 0) {

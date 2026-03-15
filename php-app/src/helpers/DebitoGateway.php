@@ -32,6 +32,15 @@ class DebitoGateway
         return (int) Config::get($specificKey, 0);
     }
 
+    private static function walletCandidates(string $provider): array
+    {
+        $provider = self::normalizedProvider($provider);
+        $primary = self::walletId($provider);
+        $fallback = self::walletId($provider === 'emola' ? 'mpesa' : 'emola');
+        $candidates = array_values(array_unique(array_filter([(int)$primary, (int)$fallback], fn($n) => $n > 0)));
+        return $candidates;
+    }
+
     private static function bearerToken(): string
     {
         return trim((string) Config::get('DEBITO_TOKEN', ''));
@@ -119,32 +128,48 @@ class DebitoGateway
     public static function createC2B(string $provider, string $msisdn, float $amount, string $referenceDescription, ?string $internalNotes = null, ?string $callbackUrl = null): array
     {
         $provider = self::normalizedProvider($provider);
-        $walletId = self::walletId($provider);
-        if ($walletId <= 0) {
+        $walletCandidates = self::walletCandidates($provider);
+        if (empty($walletCandidates)) {
             return ['ok' => false, 'status' => 500, 'message' => 'Débito API não configurada (DEBITO_WALLET_ID_MPESA/DEBITO_WALLET_ID_EMOLA)', 'data' => null];
         }
 
-        $path = '/api/v1/wallets/' . $walletId . '/c2b/' . $provider;
-        $payload = [
-            'msisdn' => $msisdn,
-            'amount' => $amount,
-            'reference_description' => mb_substr($referenceDescription, 0, 100),
-        ];
+        $last = null;
+        foreach ($walletCandidates as $walletId) {
+            $path = '/api/v1/wallets/' . $walletId . '/c2b/' . $provider;
+            $payload = [
+                'msisdn' => $msisdn,
+                'amount' => $amount,
+                'reference_description' => mb_substr($referenceDescription, 0, 100),
+            ];
 
-        if ($internalNotes !== null && trim($internalNotes) !== '') {
-            $payload['internal_notes'] = mb_substr(trim($internalNotes), 0, 255);
-        }
-        if ($callbackUrl !== null && trim($callbackUrl) !== '') {
-            $payload['callback_url'] = trim($callbackUrl);
+            if ($internalNotes !== null && trim($internalNotes) !== '') {
+                $payload['internal_notes'] = mb_substr(trim($internalNotes), 0, 255);
+            }
+            if ($callbackUrl !== null && trim($callbackUrl) !== '') {
+                $payload['callback_url'] = trim($callbackUrl);
+            }
+
+            $res = self::request('POST', $path, $payload);
+            if (!is_array($res['data'] ?? null)) {
+                $res['data'] = [];
+            }
+            $res['data']['_request_wallet_id'] = $walletId;
+            $res['data']['_request_provider'] = $provider;
+
+            if ($res['ok']) {
+                return $res;
+            }
+
+            $last = $res;
+            $msg = strtoupper((string) ($res['message'] ?? ''));
+            $raw = strtoupper((string) ($res['data']['raw'] ?? ''));
+            $walletTypeErr = str_contains($msg, 'CARTEIRA') || str_contains($raw, 'CARTEIRA') || str_contains($msg, 'WALLET');
+            if (!$walletTypeErr) {
+                break;
+            }
         }
 
-        $res = self::request('POST', $path, $payload);
-        if (!is_array($res['data'] ?? null)) {
-            $res['data'] = [];
-        }
-        $res['data']['_request_wallet_id'] = $walletId;
-        $res['data']['_request_provider'] = $provider;
-        return $res;
+        return $last ?? ['ok' => false, 'status' => 502, 'message' => 'Erro ao iniciar transação Débito', 'data' => null];
     }
 
     public static function transactionStatus(string $debitoReference): array
