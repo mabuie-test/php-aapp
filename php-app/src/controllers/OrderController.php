@@ -283,7 +283,14 @@ class OrderController
         $internalNotes = (string) ($body['internal_notes'] ?? ('order_id=' . $orderId . ';invoice_id=' . ((int) $order['invoice_id']) . ';user_id=' . $user['id']));
 
         $appUrl = rtrim((string) Config::get('APP_URL', ''), '/');
-        $callbackUrl = $appUrl !== '' ? ($appUrl . '/api/payments/debito/callback') : null;
+        $callbackUrl = null;
+        if ($appUrl !== '') {
+            $callbackUrl = $appUrl . '/api/payments/debito/webhook-c2b';
+            $cbSecret = trim((string) Config::get('DEBITO_CALLBACK_SECRET', ''));
+            if ($cbSecret !== '') {
+                $callbackUrl .= '?secret=' . rawurlencode($cbSecret);
+            }
+        }
 
         $gateway = DebitoGateway::createC2B($method, $msisdn, $amount, $referenceDescription, $internalNotes, $callbackUrl);
         if (!$gateway['ok']) {
@@ -353,6 +360,11 @@ class OrderController
         $secret = trim((string) Config::get('DEBITO_CALLBACK_SECRET', ''));
         if ($secret === '') {
             return false;
+        }
+
+        $querySecret = (string) ($_GET['secret'] ?? '');
+        if ($querySecret !== '' && hash_equals($secret, $querySecret)) {
+            return true;
         }
 
         $headers = function_exists('getallheaders') ? getallheaders() : [];

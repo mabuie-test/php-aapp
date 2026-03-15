@@ -92,6 +92,10 @@ if ($uri === '/api/payments/debito/callback' && $method === 'POST') {
     OrderController::debitCallback();
     return;
 }
+if ($uri === '/api/payments/debito/webhook-c2b' && $method === 'POST') {
+    OrderController::debitCallback();
+    return;
+}
 
 // ROTAS DE AFILIADOS
 if ($uri === '/api/affiliates/summary' && $method === 'GET') {
