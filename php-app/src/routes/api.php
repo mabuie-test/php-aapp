@@ -180,6 +180,10 @@ if ($uri === '/api/admin/audits' && $method === 'GET') {
     AdminController::audits();
     return;
 }
+if ($uri === '/api/admin/debito-transactions' && $method === 'GET') {
+    AdminController::debitTransactions();
+    return;
+}
 
 if ($uri === '/api/admin/notifications-center' && $method === 'GET') {
     AdminController::notificationsCenter();

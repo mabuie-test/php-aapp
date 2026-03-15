@@ -942,6 +942,112 @@ public static function payouts(): void
         Response::json(['fraud' => $signals]);
     }
 
+
+    public static function debitTransactions(): void
+    {
+        self::requireAdmin();
+        $page = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
+        $perPage = isset($_GET['per_page']) ? (int) $_GET['per_page'] : 20;
+        $perPage = max(1, min(100, $perPage));
+        $offset = ($page - 1) * $perPage;
+
+        $pdo = Database::pdo();
+        $countStmt = $pdo->query("SELECT COUNT(*) FROM audits WHERE action LIKE 'invoice:debit:%'");
+        $total = (int) $countStmt->fetchColumn();
+        $pages = max(1, (int) ceil($total / $perPage));
+        if ($page > $pages) {
+            $page = $pages;
+            $offset = ($page - 1) * $perPage;
+        }
+
+        $stmt = $pdo->prepare("SELECT a.*, u.email
+            FROM audits a
+            LEFT JOIN users u ON u.id = a.user_id
+            WHERE a.action LIKE 'invoice:debit:%'
+            ORDER BY a.id DESC
+            LIMIT :lim OFFSET :off");
+        $stmt->bindValue(':lim', $perPage, \PDO::PARAM_INT);
+        $stmt->bindValue(':off', $offset, \PDO::PARAM_INT);
+        $stmt->execute();
+        $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        $msisdnCounter = [];
+        foreach ($rows as $r) {
+            $m = json_decode((string) ($r['meta'] ?? '{}'), true);
+            $key = preg_replace('/\D+/', '', (string) ($m['msisdn'] ?? ''));
+            if ($key !== '') {
+                $msisdnCounter[$key] = ($msisdnCounter[$key] ?? 0) + 1;
+            }
+        }
+
+        $transactions = array_map(function ($r) use ($msisdnCounter) {
+            $meta = json_decode((string) ($r['meta'] ?? '{}'), true);
+            if (!is_array($meta)) $meta = [];
+
+            $providerResponse = is_array($meta['provider_response'] ?? null) ? $meta['provider_response'] : [];
+            $status = (string) ($providerResponse['status'] ?? $meta['status'] ?? '');
+            $norm = strtoupper(trim($status));
+            $paid = in_array($norm, ['PAID', 'SUCCESS', 'SUCCEEDED', 'COMPLETED', 'APPROVED'], true);
+            $failed = in_array($norm, ['FAILED', 'REJECTED', 'CANCELLED', 'DECLINED', 'ERROR'], true);
+            $msisdn = preg_replace('/\D+/', '', (string) ($meta['msisdn'] ?? ''));
+            $sameMsisdnHits = $msisdn !== '' ? (int) ($msisdnCounter[$msisdn] ?? 0) : 0;
+
+            $suspiciousReasons = [];
+            if (($r['action'] ?? '') === 'invoice:debit:callback:invalid') {
+                $suspiciousReasons[] = 'callback_invalido';
+            }
+            if ($failed) {
+                $suspiciousReasons[] = 'falha_pagamento';
+            }
+            if ($sameMsisdnHits >= 3) {
+                $suspiciousReasons[] = 'msisdn_repetido';
+            }
+
+            return [
+                'id' => (int) ($r['id'] ?? 0),
+                'created_at' => $r['created_at'] ?? null,
+                'action' => $r['action'] ?? '',
+                'email' => $r['email'] ?? null,
+                'order_id' => isset($meta['order_id']) ? (int) $meta['order_id'] : null,
+                'invoice_id' => isset($meta['invoice_id']) ? (int) $meta['invoice_id'] : null,
+                'provider' => $meta['provider'] ?? null,
+                'msisdn' => $meta['msisdn'] ?? null,
+                'amount' => $meta['amount'] ?? null,
+                'debito_reference' => $providerResponse['debito_reference'] ?? $meta['debito_reference'] ?? null,
+                'status' => $status,
+                'success' => $paid,
+                'failed' => $failed,
+                'suspicious' => !empty($suspiciousReasons),
+                'suspicious_reasons' => $suspiciousReasons,
+                'meta' => $meta,
+            ];
+        }, $rows);
+
+        $summary = [
+            'success' => 0,
+            'failed' => 0,
+            'suspicious' => 0,
+            'pending' => 0,
+        ];
+        foreach ($transactions as $t) {
+            if ($t['success']) $summary['success']++;
+            elseif ($t['failed']) $summary['failed']++;
+            else $summary['pending']++;
+            if ($t['suspicious']) $summary['suspicious']++;
+        }
+
+        Response::json([
+            'transactions' => $transactions,
+            'summary' => $summary,
+            'pagination' => [
+                'page' => $page,
+                'per_page' => $perPage,
+                'total' => $total,
+                'pages' => $pages,
+            ],
+        ]);
+    }
+
     public static function audits(): void
     {
         self::requireAdmin();
