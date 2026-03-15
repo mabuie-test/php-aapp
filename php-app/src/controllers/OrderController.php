@@ -286,12 +286,12 @@ class OrderController
             return;
         }
         if ($method === 'emola') {
-            if (!preg_match('/^84\d{7}$/', $msisdn)) {
-                Response::json(['message' => 'Número eMola inválido. Use formato 84xxxxxxx'], 422);
+            if (!preg_match('/^(86|87)\d{7}$/', $msisdn)) {
+                Response::json(['message' => 'Número eMola inválido. Use formato 86xxxxxxx ou 87xxxxxxx'], 422);
                 return;
             }
-        } elseif (!preg_match('/^8\d{8}$/', $msisdn)) {
-            Response::json(['message' => 'Número M-Pesa inválido. Use formato 8xxxxxxxx'], 422);
+        } elseif (!preg_match('/^(84|85)\d{7}$/', $msisdn)) {
+            Response::json(['message' => 'Número M-Pesa inválido. Use formato 84xxxxxxx ou 85xxxxxxx'], 422);
             return;
         }
 

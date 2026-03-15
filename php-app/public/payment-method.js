@@ -28,6 +28,23 @@ function requireAuth() {
   return true;
 }
 
+
+function applyMsisdnConstraints() {
+  const msisdnInput = document.getElementById('payment-msisdn');
+  const msisdnHelp = document.getElementById('payment-msisdn-help');
+  if (!msisdnInput) return;
+
+  if (selectedMethod === 'emola') {
+    msisdnInput.placeholder = '86xxxxxxx';
+    msisdnInput.pattern = '(86|87)[0-9]{7}';
+    if (msisdnHelp) msisdnHelp.textContent = 'eMola: use 86xxxxxxx ou 87xxxxxxx';
+  } else {
+    msisdnInput.placeholder = '84xxxxxxx';
+    msisdnInput.pattern = '(84|85)[0-9]{7}';
+    if (msisdnHelp) msisdnHelp.textContent = 'M-Pesa: use 84xxxxxxx ou 85xxxxxxx';
+  }
+}
+
 function setResult(message, type = 'info') {
   const el = document.getElementById('payment-result');
   if (!el) return;
@@ -81,6 +98,7 @@ document.querySelectorAll('.payment-card').forEach((btn) => {
     const help = document.getElementById('payment-help');
     if (title) title.textContent = `Pagamento ${selectedMethod === 'emola' ? 'eMola' : 'M-Pesa'}`;
     if (help) help.textContent = `Indique o valor e o número ${selectedMethod === 'emola' ? 'eMola' : 'M-Pesa'} para receber o pedido de débito.`;
+    applyMsisdnConstraints();
     setResult('');
   });
 });
@@ -129,10 +147,19 @@ if (form) {
     }
 
     const submitBtn = form.querySelector('button[type="submit"]');
+    const msisdn = (document.getElementById('payment-msisdn')?.value || '').trim();
+    const msisdnRegex = selectedMethod === 'emola' ? /^(86|87)\d{7}$/ : /^(84|85)\d{7}$/;
+    if (!msisdnRegex.test(msisdn)) {
+      setResult(selectedMethod === 'emola'
+        ? 'Número eMola inválido. Use 86xxxxxxx ou 87xxxxxxx.'
+        : 'Número M-Pesa inválido. Use 84xxxxxxx ou 85xxxxxxx.', 'error');
+      return;
+    }
+
     const payload = {
       method: selectedMethod,
       amount: Number(document.getElementById('payment-amount')?.value || 0),
-      msisdn: (document.getElementById('payment-msisdn')?.value || '').trim(),
+      msisdn,
       reference_description: (document.getElementById('payment-reference')?.value || '').trim(),
     };
 
