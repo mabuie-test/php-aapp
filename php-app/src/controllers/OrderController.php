@@ -501,6 +501,28 @@ class OrderController
         return $legacy !== '' && hash_equals($secret, $legacy);
     }
 
+    private static function findOrderIdByDebitoReference(string $debitoReference): int
+    {
+        $ref = trim($debitoReference);
+        if ($ref === '') return 0;
+        try {
+            $pdo = \App\Config\Database::pdo();
+            $stmt = $pdo->prepare("SELECT meta FROM audits WHERE action='invoice:debit:start' ORDER BY id DESC LIMIT 300");
+            $stmt->execute();
+            $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            foreach ($rows as $row) {
+                $meta = json_decode((string) ($row['meta'] ?? '{}'), true);
+                if (!is_array($meta)) continue;
+                $provider = is_array($meta['provider_response'] ?? null) ? $meta['provider_response'] : [];
+                $candidate = (string) ($provider['debito_reference'] ?? $meta['debito_reference'] ?? '');
+                if ($candidate !== '' && hash_equals($candidate, $ref)) {
+                    return (int) ($meta['order_id'] ?? 0);
+                }
+            }
+        } catch (\Throwable $e) {}
+        return 0;
+    }
+
     private static function parseOrderIdFromDebitoPayload(array $payload): int
     {
         $candidates = [
@@ -563,6 +585,9 @@ class OrderController
             }
         }
         $orderId = self::parseOrderIdFromDebitoPayload($payload);
+        if ($orderId <= 0) {
+            $orderId = self::findOrderIdByDebitoReference($debitoReference);
+        }
 
         if ($orderId <= 0) {
             AuditHelper::log(null, 'invoice:debit:callback:invalid', ['payload' => $payload]);

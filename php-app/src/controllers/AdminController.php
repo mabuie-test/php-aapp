@@ -1031,7 +1031,7 @@ public static function payouts(): void
             $providerResponse = is_array($meta['provider_response'] ?? null) ? $meta['provider_response'] : [];
             $status = (string) ($providerResponse['status'] ?? $meta['status'] ?? '');
             $norm = strtoupper(trim($status));
-            $paid = in_array($norm, ['PAID', 'SUCCESS', 'SUCCEEDED', 'COMPLETED', 'APPROVED'], true);
+            $paid = in_array($norm, ['PAID', 'SUCCESS', 'SUCCEEDED', 'COMPLETED', 'APPROVED', 'SUCCESSFUL', 'DONE', 'CONFIRMED'], true);
             $failed = in_array($norm, ['FAILED', 'REJECTED', 'CANCELLED', 'DECLINED', 'ERROR'], true);
             $msisdn = preg_replace('/\D+/', '', (string) ($meta['msisdn'] ?? ''));
             $sameMsisdnHits = $msisdn !== '' ? (int) ($msisdnCounter[$msisdn] ?? 0) : 0;
