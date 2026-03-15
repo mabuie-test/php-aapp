@@ -80,6 +80,10 @@ if (preg_match('#^/api/orders/(\d+)$#', $uri, $matches) && $method === 'GET') {
     OrderController::show((int) $matches[1]);
     return;
 }
+if (preg_match('#^/api/orders/(\d+)/debit-pay$#', $uri, $matches) && $method === 'POST') {
+    OrderController::debitPay((int) $matches[1]);
+    return;
+}
 if (preg_match('#^/api/orders/(\d+)/pdf$#', $uri, $matches) && $method === 'GET') {
     OrderController::invoicePdf((int) $matches[1]);
     return;

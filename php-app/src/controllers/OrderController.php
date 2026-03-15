@@ -6,6 +6,7 @@ use App\Helpers\Pricing;
 use App\Helpers\Response;
 use App\Helpers\AuditHelper;
 use App\Helpers\Mailer;
+use App\Helpers\DebitoGateway;
 use App\Models\Order;
 use App\Models\Invoice;
 use App\Models\Feedback;
@@ -210,6 +211,77 @@ class OrderController
             Mailer::send($adminEmail, 'Comprovativo submetido', 'O cliente ' . $user['email'] . ' submeteu comprovativo da fatura #' . $invoiceId);
         }
         Response::json(['message' => 'Comprovativo enviado']);
+    }
+
+    public static function debitPay(int $orderId): void
+    {
+        $user = Auth::requireUser();
+        $order = Order::findWithInvoice($orderId);
+        if (!$order) {
+            Response::json(['message' => 'Encomenda não encontrada'], 404);
+            return;
+        }
+        if ((int) $order['user_id'] !== (int) $user['id']) {
+            Response::json(['message' => 'Acesso negado'], 403);
+            return;
+        }
+        if (empty($order['invoice_id'])) {
+            Response::json(['message' => 'Fatura não encontrada para esta encomenda'], 400);
+            return;
+        }
+
+        $body = json_decode(file_get_contents('php://input'), true) ?? [];
+        $method = strtolower((string) ($body['method'] ?? ''));
+        $msisdn = preg_replace('/\D+/', '', (string) ($body['msisdn'] ?? ''));
+        $amount = (float) ($body['amount'] ?? 0);
+
+        if (!in_array($method, ['mpesa', 'emola'], true)) {
+            Response::json(['message' => 'Método de pagamento inválido'], 422);
+            return;
+        }
+        if (!preg_match('/^8\d{8}$/', $msisdn)) {
+            Response::json(['message' => 'Número inválido. Use formato 84xxxxxxx'], 422);
+            return;
+        }
+
+        $invoice = Invoice::findById((int) $order['invoice_id']);
+        $invoiceTotal = (float) ($invoice['valor_total'] ?? 0);
+        if ($amount < 1) {
+            $amount = $invoiceTotal;
+        }
+        if ($amount < 1) {
+            Response::json(['message' => 'Valor de pagamento inválido'], 422);
+            return;
+        }
+
+        $referenceDescription = (string) ($body['reference_description'] ?? ('Pagamento fatura ' . ($order['invoice_numero'] ?? ('FAT-' . $orderId))));
+        $internalNotes = (string) ($body['internal_notes'] ?? ('order:' . $orderId . ';user:' . $user['id']));
+
+        $gateway = DebitoGateway::createC2B($method, $msisdn, $amount, $referenceDescription, $internalNotes);
+        if (!$gateway['ok']) {
+            Response::json([
+                'message' => $gateway['message'] ?? 'Falha ao iniciar pagamento automático',
+                'provider_response' => $gateway['data'] ?? null,
+            ], $gateway['status'] >= 400 ? (int) $gateway['status'] : 502);
+            return;
+        }
+
+        Order::updateEstado($orderId, 'PAGAMENTO_EM_VALIDACAO');
+        AuditHelper::log($user['id'], 'invoice:debit:start', [
+            'order_id' => $orderId,
+            'invoice_id' => (int) $order['invoice_id'],
+            'provider' => $method,
+            'msisdn' => $msisdn,
+            'amount' => $amount,
+            'provider_response' => $gateway['data'] ?? null,
+        ]);
+
+        Response::json([
+            'message' => 'Pedido de pagamento enviado com sucesso',
+            'provider' => $method,
+            'amount' => $amount,
+            'data' => $gateway['data'] ?? [],
+        ]);
     }
 
     public static function index(): void
