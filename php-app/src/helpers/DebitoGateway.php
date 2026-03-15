@@ -125,11 +125,12 @@ class DebitoGateway
         }
 
         $path = '/api/v1/wallets/' . $walletId . '/c2b/' . $provider;
-        $payload = [
+        $basePayload = [
             'msisdn' => $msisdn,
             'amount' => $amount,
             'reference_description' => mb_substr($referenceDescription, 0, 100),
         ];
+        $payload = $basePayload;
 
         if ($internalNotes !== null && trim($internalNotes) !== '') {
             $payload['internal_notes'] = mb_substr(trim($internalNotes), 0, 255);
@@ -139,6 +140,17 @@ class DebitoGateway
         }
 
         $res = self::request('POST', $path, $payload);
+
+        // Compatibilidade: alguns provedores/wallets rejeitam campos opcionais;
+        // nesses casos tentamos novamente com o payload mínimo (como no curl oficial).
+        if (!$res['ok'] && ($payload !== $basePayload)) {
+            $res = self::request('POST', $path, $basePayload);
+            if (!is_array($res['data'] ?? null)) {
+                $res['data'] = [];
+            }
+            $res['data']['_request_retry_without_optional_fields'] = true;
+        }
+
         if (!is_array($res['data'] ?? null)) {
             $res['data'] = [];
         }
