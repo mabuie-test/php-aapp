@@ -13,6 +13,16 @@ Database::pdo();
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?? '/';
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
+function applySecurityHeaders(): void
+{
+    header('X-Content-Type-Options: nosniff');
+    header('X-Frame-Options: DENY');
+    header('Referrer-Policy: strict-origin-when-cross-origin');
+    header('Permissions-Policy: camera=(), microphone=(), geolocation=()');
+}
+
+applySecurityHeaders();
+
 // API handling
 if (str_starts_with($uri, '/api/')) {
     header('Access-Control-Allow-Origin: *');
@@ -43,7 +53,9 @@ if ($uploadsRoot && str_starts_with($uri, '/uploads/')) {
         };
         header('Content-Type: ' . $mime);
         header('Content-Length: ' . filesize($file));
-        header('Content-Disposition: inline; filename="' . basename($file) . '"');
+        $inline = in_array($extension, ['jpg', 'jpeg', 'png', 'pdf'], true);
+        header('Content-Disposition: ' . ($inline ? 'inline' : 'attachment') . '; filename="' . basename($file) . '"');
+        header('Cache-Control: private, max-age=300');
         readfile($file);
         return;
     }
@@ -64,6 +76,11 @@ if ($target && is_file($target) && str_starts_with($target, $publicRoot)) {
         default => 'application/octet-stream',
     };
     header('Content-Type: ' . $mime);
+    if (in_array($extension, ['css', 'js', 'png', 'jpg', 'jpeg', 'svg', 'pdf'], true)) {
+        header('Cache-Control: public, max-age=3600');
+    } else {
+        header('Cache-Control: no-cache');
+    }
     readfile($target);
     return;
 }

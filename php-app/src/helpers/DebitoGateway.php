@@ -55,11 +55,21 @@ class DebitoGateway
             CURLOPT_CONNECTTIMEOUT => 10,
             CURLOPT_SSL_VERIFYPEER => true,
             CURLOPT_SSL_VERIFYHOST => 2,
+            CURLOPT_ENCODING => '',
+            CURLOPT_TCP_KEEPALIVE => 1,
         ]);
 
         $raw = curl_exec($ch);
         $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $err = curl_error($ch);
+
+        if (($raw === false || $err || $status === 429 || $status >= 500) && !$err) {
+            usleep(150000);
+            $raw = curl_exec($ch);
+            $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $err = curl_error($ch);
+        }
+
         curl_close($ch);
 
         if ($raw === false || $err) {

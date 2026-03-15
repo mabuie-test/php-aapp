@@ -244,6 +244,13 @@ class OrderController
             return;
         }
 
+        $ip = (string) ($_SERVER['REMOTE_ADDR'] ?? 'unknown');
+        $scope = 'debitpay:' . $user['id'] . ':' . $orderId . ':' . $ip;
+        if (self::rateLimitExceeded($scope, 6, 60)) {
+            Response::json(['message' => 'Muitas tentativas de pagamento. Aguarde 1 minuto.'], 429);
+            return;
+        }
+
         $invoice = Invoice::findById((int) $order['invoice_id']);
         if (!$invoice) {
             Response::json(['message' => 'Fatura inválida para esta encomenda'], 404);
@@ -306,6 +313,33 @@ class OrderController
     }
 
 
+    private static function rateLimitExceeded(string $scope, int $maxAttempts, int $windowSec): bool
+    {
+        $dir = sys_get_temp_dir() . '/flux_rate_limits';
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0775, true);
+        }
+
+        $file = $dir . '/' . hash('sha256', $scope) . '.json';
+        $now = time();
+        $history = [];
+        if (is_file($file)) {
+            $raw = @file_get_contents($file);
+            $decoded = is_string($raw) ? json_decode($raw, true) : null;
+            if (is_array($decoded)) {
+                $history = array_values(array_filter($decoded, fn($t) => is_numeric($t) && ((int) $t) > ($now - $windowSec)));
+            }
+        }
+
+        if (count($history) >= $maxAttempts) {
+            return true;
+        }
+
+        $history[] = $now;
+        @file_put_contents($file, json_encode($history), LOCK_EX);
+        return false;
+    }
+
     private static function maskMsisdn(string $msisdn): string
     {
         $clean = preg_replace('/\D+/', '', $msisdn);
@@ -323,9 +357,18 @@ class OrderController
 
         $headers = function_exists('getallheaders') ? getallheaders() : [];
         $signature = (string) ($headers['X-Debito-Signature'] ?? $headers['x-debito-signature'] ?? '');
+        $timestamp = (string) ($headers['X-Debito-Timestamp'] ?? $headers['x-debito-timestamp'] ?? '');
+        if ($timestamp !== '' && ctype_digit($timestamp)) {
+            $ts = (int) $timestamp;
+            if (abs(time() - $ts) > 300) {
+                return false;
+            }
+        }
+
         if ($signature !== '') {
-            $expected = hash_hmac('sha256', $rawBody, $secret);
-            if (hash_equals($expected, $signature)) {
+            $expectedRaw = hash_hmac('sha256', $rawBody, $secret);
+            $expectedTs = $timestamp !== '' ? hash_hmac('sha256', $timestamp . '.' . $rawBody, $secret) : '';
+            if (hash_equals($expectedRaw, $signature) || ($expectedTs !== '' && hash_equals($expectedTs, $signature))) {
                 return true;
             }
         }
@@ -369,6 +412,12 @@ class OrderController
         $payload = json_decode($raw, true);
         if (!is_array($payload)) {
             Response::json(['message' => 'Payload inválido'], 400);
+            return;
+        }
+
+        $cbIp = (string) ($_SERVER['REMOTE_ADDR'] ?? 'unknown');
+        if (self::rateLimitExceeded('debitcb:' . $cbIp, 180, 60)) {
+            Response::json(['message' => 'Demasiados callbacks em curto período'], 429);
             return;
         }
 
