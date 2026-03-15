@@ -37,8 +37,9 @@
       <h3 id="payment-title">Pagamento</h3>
       <p class="muted" id="payment-help"></p>
       <form id="payment-form" class="stacked-actions">
-        <label for="payment-amount">Valor (MZN)</label>
-        <input id="payment-amount" name="amount" type="number" step="0.01" min="1" required />
+        <label for="payment-amount">Valor da fatura (MZN)</label>
+        <input id="payment-amount" name="amount" type="number" step="0.01" min="1" required readonly />
+        <p class="muted" style="margin-top:-.4rem;">Valor bloqueado conforme a fatura emitida.</p>
 
         <label for="payment-msisdn">Número de pagamento</label>
         <input id="payment-msisdn" name="msisdn" type="tel" inputmode="numeric" placeholder="84xxxxxxx" pattern="8[0-9]{8}" required />

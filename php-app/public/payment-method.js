@@ -33,6 +33,7 @@ async function loadOrder() {
   const amountField = document.getElementById('payment-amount');
   if (amountField) {
     amountField.value = String(orderData.valor_total || data.invoice_details?.valor_total || '').replace(',', '.');
+    amountField.readOnly = true;
   }
 
   const refField = document.getElementById('payment-reference');
@@ -69,6 +70,32 @@ document.querySelectorAll('.payment-card').forEach((btn) => {
   });
 });
 
+
+async function waitPaymentConfirmation(debitoReference) {
+  const maxTries = 24; // ~2 min
+  for (let i = 0; i < maxTries; i += 1) {
+    await new Promise((r) => setTimeout(r, 5000));
+    const res = await fetch(`${apiBase}/orders/${orderId}/debit-status?debito_reference=${encodeURIComponent(debitoReference || '')}`, {
+      headers: { Authorization: `Bearer ${authToken}` },
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      if (res.status >= 500) continue;
+      setResult(data.message || 'Erro ao consultar estado do pagamento', 'error');
+      return false;
+    }
+    if (data.paid) {
+      setResult('Pagamento confirmado com sucesso. A redirecionar para faturas...', 'success');
+      setTimeout(() => { window.location.href = '/documents.html'; }, 1200);
+      return true;
+    }
+    const statusTxt = data.status ? ` (${data.status})` : '';
+    setResult(`Aguardando confirmação do pagamento${statusTxt}...`);
+  }
+  setResult('Pagamento iniciado. Ainda pendente de confirmação. Atualize em alguns instantes.', 'info');
+  return false;
+}
+
 const form = document.getElementById('payment-form');
 if (form) {
   form.addEventListener('submit', async (e) => {
@@ -100,9 +127,12 @@ if (form) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Não foi possível iniciar pagamento');
-      const debitoRef = data.data?.debito_reference ? ` Ref: ${data.data.debito_reference}.` : '';
+      const debitoRef = data.data?.debito_reference || '';
       const status = data.data?.status ? ` Status: ${data.data.status}.` : '';
-      setResult(`Pedido enviado com sucesso.${debitoRef}${status}`, 'success');
+      setResult(`Pedido enviado com sucesso.${debitoRef ? ` Ref: ${debitoRef}.` : ''}${status}`, 'success');
+      if (debitoRef) {
+        await waitPaymentConfirmation(debitoRef);
+      }
     } catch (err) {
       setResult(err.message || 'Erro ao iniciar pagamento', 'error');
     } finally {

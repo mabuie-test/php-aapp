@@ -213,6 +213,52 @@ class OrderController
         Response::json(['message' => 'Comprovativo enviado']);
     }
 
+
+    private static function latestDebitoReferenceForOrder(int $orderId): ?string
+    {
+        try {
+            $pdo = \App\Config\Database::pdo();
+            $stmt = $pdo->prepare("SELECT meta FROM audits WHERE action='invoice:debit:start' AND JSON_EXTRACT(meta, '$.order_id') = :oid ORDER BY id DESC LIMIT 1");
+            $stmt->execute([':oid' => $orderId]);
+            $metaRaw = $stmt->fetchColumn();
+            if (!is_string($metaRaw) || trim($metaRaw) === '') return null;
+            $meta = json_decode($metaRaw, true);
+            if (!is_array($meta)) return null;
+            $provider = is_array($meta['provider_response'] ?? null) ? $meta['provider_response'] : [];
+            $ref = (string) ($provider['debito_reference'] ?? $meta['debito_reference'] ?? '');
+            return $ref !== '' ? $ref : null;
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    private static function finalizeDebitPayment(array $order, string $status, string $debitoReference, array $meta = []): bool
+    {
+        if (!self::statusIsPaid($status)) {
+            return false;
+        }
+
+        $invoiceId = (int) ($order['invoice_id'] ?? 0);
+        $orderId = (int) ($order['id'] ?? 0);
+        if ($invoiceId <= 0 || $orderId <= 0) {
+            return false;
+        }
+
+        if (($order['invoice_estado'] ?? '') !== 'PAGA') {
+            Invoice::updateEstado($invoiceId, 'PAGA');
+            Order::updateEstado($orderId, 'EM_EXECUCAO');
+        }
+
+        AuditHelper::log((int) ($order['user_id'] ?? 0), 'invoice:debit:paid', [
+            'order_id' => $orderId,
+            'invoice_id' => $invoiceId,
+            'debito_reference' => $debitoReference,
+            'status' => $status,
+            'meta' => $meta,
+        ]);
+        return true;
+    }
+
     public static function debitPay(int $orderId): void
     {
         $user = Auth::requireUser();
@@ -269,9 +315,12 @@ class OrderController
             Response::json(['message' => 'Valor de pagamento inválido (permitido: 1 a 50000)'], 422);
             return;
         }
-        if ($invoiceTotal > 0 && $amount > $invoiceTotal) {
-            Response::json(['message' => 'Valor não pode ser superior ao total da fatura'], 422);
-            return;
+        if ($invoiceTotal > 0) {
+            if (abs($amount - $invoiceTotal) > 0.01) {
+                Response::json(['message' => 'Valor deve ser exatamente o total da fatura'], 422);
+                return;
+            }
+            $amount = $invoiceTotal;
         }
 
         $referenceDescription = (string) ($body['reference_description'] ?? ('Pagamento fatura ' . ($order['invoice_numero'] ?? ('FAT-' . $orderId))));
@@ -319,6 +368,63 @@ class OrderController
         ]);
     }
 
+
+
+    public static function debitStatus(int $orderId): void
+    {
+        $user = Auth::requireUser();
+        $order = Order::findWithInvoice($orderId);
+        if (!$order) {
+            Response::json(['message' => 'Encomenda não encontrada'], 404);
+            return;
+        }
+        if ((int) $order['user_id'] !== (int) $user['id']) {
+            Response::json(['message' => 'Acesso negado'], 403);
+            return;
+        }
+
+        $debitoReference = trim((string) ($_GET['debito_reference'] ?? ''));
+        if ($debitoReference === '') {
+            $debitoReference = (string) (self::latestDebitoReferenceForOrder($orderId) ?? '');
+        }
+        if ($debitoReference === '') {
+            Response::json(['message' => 'Referência de pagamento não encontrada'], 404);
+            return;
+        }
+
+        $statusResponse = DebitoGateway::transactionStatus($debitoReference);
+        if (!$statusResponse['ok']) {
+            Response::json([
+                'message' => $statusResponse['message'] ?? 'Não foi possível consultar estado da transação',
+                'provider_response' => $statusResponse['data'] ?? null,
+            ], $statusResponse['status'] >= 400 ? (int) $statusResponse['status'] : 502);
+            return;
+        }
+
+        $provider = is_array($statusResponse['data'] ?? null) ? $statusResponse['data'] : [];
+        $status = (string) ($provider['status'] ?? $provider['transaction_status'] ?? '');
+        $paid = self::finalizeDebitPayment($order, $status, $debitoReference, [
+            'source' => 'status_poll',
+            'provider_response' => $provider,
+        ]);
+
+        AuditHelper::log((int) $user['id'], 'invoice:debit:status', [
+            'order_id' => $orderId,
+            'invoice_id' => (int) ($order['invoice_id'] ?? 0),
+            'debito_reference' => $debitoReference,
+            'status' => $status,
+            'paid' => $paid,
+            'provider_response' => $provider,
+        ]);
+
+        Response::json([
+            'message' => $paid ? 'Pagamento confirmado automaticamente' : 'Estado consultado',
+            'debito_reference' => $debitoReference,
+            'status' => $status,
+            'paid' => $paid,
+            'provider_response' => $provider,
+        ]);
+    }
 
     private static function rateLimitExceeded(string $scope, int $maxAttempts, int $windowSec): bool
     {
@@ -458,18 +564,7 @@ class OrderController
             return;
         }
 
-        if (self::statusIsPaid($status)) {
-            if (($order['invoice_estado'] ?? '') !== 'PAGA') {
-                Invoice::updateEstado((int) $order['invoice_id'], 'PAGA');
-                Order::updateEstado($orderId, 'EM_EXECUCAO');
-            }
-            AuditHelper::log((int) ($order['user_id'] ?? 0), 'invoice:debit:paid', [
-                'order_id' => $orderId,
-                'invoice_id' => (int) $order['invoice_id'],
-                'debito_reference' => $debitoReference,
-                'status' => $status,
-                'payload' => $payload,
-            ]);
+        if (self::finalizeDebitPayment($order, $status, $debitoReference, ['source' => 'webhook', 'payload' => $payload])) {
             Response::json(['message' => 'Pagamento confirmado e fatura atualizada']);
             return;
         }

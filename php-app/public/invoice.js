@@ -63,10 +63,7 @@ async function loadInvoice() {
     const materials = parseStoredFileList(order.materiais_uploads);
     const finalFiles = parseStoredFileList(order.final_file);
     const descriptionHtml = (order.descricao || '—').replace(/\n/g, '<br>');
-    const proofForm = document.getElementById('proof-form');
-    if (proofForm) {
-      proofForm.dataset.invoice = order.invoice_id || order.id;
-    }
+
     body.innerHTML = `
       <p><strong>Fatura:</strong> ${order.invoice_numero || '—'}</p>
       <p><strong>Estado:</strong> ${order.invoice_estado || 'EMITIDA'}</p>
@@ -80,11 +77,10 @@ async function loadInvoice() {
       <p><strong>Percentual de uso dos materiais:</strong> ${order.materiais_percentual || '—'}${order.materiais_percentual ? '%' : ''}</p>
       <p><strong>Valor:</strong> ${order.valor_total || order.total || '—'} MZN</p>
       <p><strong>Materiais fornecidos:</strong> ${materials.length ? materials.map((m) => `<a href="${m}" target="_blank">${m.split('/').pop()}</a>`).join(', ') : 'Nenhum'}</p>
-      ${order.comprovativo ? `<p class="muted">Comprovativo já enviado: <a href="${order.comprovativo}" target="_blank">abrir</a></p>` : ''}
       <hr />
       <p><strong>Pagamento automático</strong></p>
       <p>Use o botão "Pagar agora (M-Pesa/eMola)" para receber o pedido de débito no seu número.</p>
-      <p class="muted">Se preferir, também pode pagar manualmente e enviar comprovativo nesta página.</p>
+      <p class="muted">Após o débito e confirmação do PIN, o pagamento será validado automaticamente.</p>
       ${finalFiles.length ? `<p class="success">Documento(s) final(is): ${finalFiles.map((f) => `<a href="${f}" target="_blank">${f.split('/').pop()}</a>`).join(', ')}</p>` : ''}
     `;
   } catch (err) {
@@ -118,40 +114,6 @@ if (pdfBtn) {
     a.click();
     URL.revokeObjectURL(url);
   };
-}
-
-const proofForm = document.getElementById('proof-form');
-if (proofForm) {
-  proofForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    if (!requireAuth()) return;
-    const form = new FormData();
-    form.set('invoice_id', proofForm.dataset.invoice || (new URLSearchParams(window.location.search)).get('invoice_id') || '');
-    form.set('order_id', orderId);
-    const fileField = document.getElementById('proof-file');
-    if (fileField?.files?.length) {
-      form.append('comprovativo', fileField.files[0]);
-    }
-    const submitBtn = proofForm.querySelector('button[type="submit"]');
-    const progress = window.UploadUtils?.ensureProgressUI(proofForm);
-    try {
-      if (submitBtn) submitBtn.disabled = true;
-      const result = await window.UploadUtils.uploadWithProgress(`${apiBase}/orders/proof`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${authToken}` },
-        body: form,
-        onProgress: (pct) => window.UploadUtils.setProgress(progress, pct, 'A enviar comprovativo...'),
-      });
-      if (!result.ok) throw new Error(result.data.message || 'Falha ao enviar comprovativo');
-      showInvoiceDialog('Comprovativo enviado com sucesso.', 'success');
-      loadInvoice();
-    } catch (err) {
-      showInvoiceDialog(err.message);
-    } finally {
-      if (submitBtn) submitBtn.disabled = false;
-      if (progress) window.UploadUtils.hideProgress(progress);
-    }
-  });
 }
 
 loadInvoice();

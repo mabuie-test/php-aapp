@@ -84,6 +84,10 @@ if (preg_match('#^/api/orders/(\d+)/debit-pay$#', $uri, $matches) && $method ===
     OrderController::debitPay((int) $matches[1]);
     return;
 }
+if (preg_match('#^/api/orders/(\d+)/debit-status$#', $uri, $matches) && $method === 'GET') {
+    OrderController::debitStatus((int) $matches[1]);
+    return;
+}
 if (preg_match('#^/api/orders/(\d+)/pdf$#', $uri, $matches) && $method === 'GET') {
     OrderController::invoicePdf((int) $matches[1]);
     return;
@@ -128,6 +132,10 @@ if ($uri === '/api/admin/orders' && $method === 'GET') {
 }
 if ($uri === '/api/admin/orders/final-upload' && $method === 'POST') {
     AdminController::uploadFinal();
+    return;
+}
+if ($uri === '/api/admin/orders/debit-cancel' && $method === 'POST') {
+    AdminController::cancelAutoDebit();
     return;
 }
 if ($uri === '/api/admin/invoices/approve' && $method === 'POST') {

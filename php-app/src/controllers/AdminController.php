@@ -943,6 +943,50 @@ public static function payouts(): void
     }
 
 
+
+    public static function cancelAutoDebit(): void
+    {
+        $admin = self::requireAdmin();
+        $orderId = (int) ($_POST['order_id'] ?? 0);
+        $reason = trim((string) ($_POST['reason'] ?? ''));
+
+        if ($orderId <= 0) {
+            Response::json(['message' => 'order_id obrigatório'], 422);
+            return;
+        }
+        if ($reason === '') {
+            Response::json(['message' => 'Motivo da anulação é obrigatório'], 422);
+            return;
+        }
+
+        $order = Order::findWithInvoice($orderId);
+        if (!$order || empty($order['invoice_id'])) {
+            Response::json(['message' => 'Encomenda/fatura não encontrada'], 404);
+            return;
+        }
+
+        if (($order['invoice_estado'] ?? '') === 'PAGA') {
+            Response::json(['message' => 'Fatura já paga. Não é possível anular automaticamente.'], 409);
+            return;
+        }
+
+        Invoice::updateEstado((int) $order['invoice_id'], 'EMITIDA');
+        Order::updateEstado($orderId, 'PENDENTE_PAGAMENTO');
+
+        AuditHelper::log($admin['id'], 'invoice:debit:cancel', [
+            'order_id' => $orderId,
+            'invoice_id' => (int) $order['invoice_id'],
+            'reason' => $reason,
+            'admin_email' => $admin['email'] ?? null,
+        ]);
+
+        if (!empty($order['user_email'])) {
+            Mailer::send($order['user_email'], 'Pagamento automático anulado', 'O pagamento automático da encomenda #' . $orderId . ' foi anulado pelo suporte. Motivo: ' . $reason . '. Pode tentar novamente ou contactar o suporte.');
+        }
+
+        Response::json(['message' => 'Pagamento automático anulado e fatura devolvida para EMITIDA']);
+    }
+
     public static function debitTransactions(): void
     {
         self::requireAdmin();
@@ -995,6 +1039,9 @@ public static function payouts(): void
             $suspiciousReasons = [];
             if (($r['action'] ?? '') === 'invoice:debit:callback:invalid') {
                 $suspiciousReasons[] = 'callback_invalido';
+            }
+            if (($r['action'] ?? '') === 'invoice:debit:cancel') {
+                $suspiciousReasons[] = 'cancelado_admin';
             }
             if ($failed) {
                 $suspiciousReasons[] = 'falha_pagamento';

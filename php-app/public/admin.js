@@ -267,6 +267,13 @@ async function loadOrders() {
           rejectBtn.dataset.order = order.id;
           rejectBtn.onclick = () => rejectInvoice(rejectBtn.dataset.invoice, rejectBtn.dataset.order);
           actions.appendChild(rejectBtn);
+
+          const cancelAutoBtn = document.createElement('button');
+          cancelAutoBtn.className = 'ghost';
+          cancelAutoBtn.textContent = 'Anular auto-pagamento';
+          cancelAutoBtn.dataset.order = order.id;
+          cancelAutoBtn.onclick = () => cancelAutoDebit(cancelAutoBtn.dataset.order);
+          actions.appendChild(cancelAutoBtn);
         } else {
           // invoiceEstado === 'PAGA' => show download + final upload (unless final_file exists)
           const downloadBtn = document.createElement('button');
@@ -378,6 +385,29 @@ async function rejectInvoice(invoiceId, orderId) {
   toast('Pagamento devolvido ao estado pendente.');
   await loadOrders();
   await loadMetrics();
+}
+
+
+
+async function cancelAutoDebit(orderId) {
+  if (!orderId) return;
+  const ok = await confirmAction('Anular o pagamento automático desta encomenda?');
+  if (!ok) return;
+  const reason = prompt('Motivo da anulação (obrigatório):', 'Suspeita/falha operacional');
+  if (!reason || !reason.trim()) return toast('Motivo obrigatório');
+  const form = new FormData();
+  form.set('order_id', orderId);
+  form.set('reason', reason.trim());
+  const res = await fetch(`${apiBase}/admin/orders/debit-cancel`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${authToken}` },
+    body: form,
+  });
+  const data = await res.json();
+  if (!res.ok) return toast(data.message || 'Erro ao anular pagamento automático');
+  toast(data.message || 'Pagamento automático anulado');
+  await loadOrders();
+  await loadDebitTransactions?.(1);
 }
 
 async function uploadFinal(orderId, input, meta = null, actionBtn = null) {

@@ -138,7 +138,13 @@ class DebitoGateway
             $payload['callback_url'] = trim($callbackUrl);
         }
 
-        return self::request('POST', $path, $payload);
+        $res = self::request('POST', $path, $payload);
+        if (!is_array($res['data'] ?? null)) {
+            $res['data'] = [];
+        }
+        $res['data']['_request_wallet_id'] = $walletId;
+        $res['data']['_request_provider'] = $provider;
+        return $res;
     }
 
     public static function transactionStatus(string $debitoReference): array
