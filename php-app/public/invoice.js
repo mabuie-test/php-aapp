@@ -64,6 +64,12 @@ async function loadInvoice() {
     const finalFiles = parseStoredFileList(order.final_file);
     const descriptionHtml = (order.descricao || '—').replace(/\n/g, '<br>');
 
+    const autoPayBtn = document.getElementById('start-auto-payment');
+    if (autoPayBtn) {
+      const paid = String(order.invoice_estado || '').toUpperCase() === 'PAGA';
+      autoPayBtn.style.display = paid ? 'none' : '';
+    }
+
     body.innerHTML = `
       <p><strong>Fatura:</strong> ${order.invoice_numero || '—'}</p>
       <p><strong>Estado:</strong> ${order.invoice_estado || 'EMITIDA'}</p>

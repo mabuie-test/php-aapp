@@ -285,8 +285,13 @@ class OrderController
             Response::json(['message' => 'Método de pagamento inválido'], 422);
             return;
         }
-        if (!preg_match('/^8\d{8}$/', $msisdn)) {
-            Response::json(['message' => 'Número inválido. Use formato 84xxxxxxx'], 422);
+        if ($method === 'emola') {
+            if (!preg_match('/^84\d{7}$/', $msisdn)) {
+                Response::json(['message' => 'Número eMola inválido. Use formato 84xxxxxxx'], 422);
+                return;
+            }
+        } elseif (!preg_match('/^8\d{8}$/', $msisdn)) {
+            Response::json(['message' => 'Número M-Pesa inválido. Use formato 8xxxxxxxx'], 422);
             return;
         }
 
