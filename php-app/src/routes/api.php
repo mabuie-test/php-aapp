@@ -80,8 +80,16 @@ if (preg_match('#^/api/orders/(\d+)$#', $uri, $matches) && $method === 'GET') {
     OrderController::show((int) $matches[1]);
     return;
 }
+if (preg_match('#^/api/orders/(\d+)/debit-pay$#', $uri, $matches) && $method === 'POST') {
+    OrderController::debitPay((int) $matches[1]);
+    return;
+}
 if (preg_match('#^/api/orders/(\d+)/pdf$#', $uri, $matches) && $method === 'GET') {
     OrderController::invoicePdf((int) $matches[1]);
+    return;
+}
+if ($uri === '/api/payments/debito/callback' && $method === 'POST') {
+    OrderController::debitCallback();
     return;
 }
 
@@ -170,6 +178,10 @@ if ($uri === '/api/admin/growth-dashboard' && $method === 'GET') {
 }
 if ($uri === '/api/admin/audits' && $method === 'GET') {
     AdminController::audits();
+    return;
+}
+if ($uri === '/api/admin/debito-transactions' && $method === 'GET') {
+    AdminController::debitTransactions();
     return;
 }
 

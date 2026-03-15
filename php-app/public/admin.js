@@ -6,6 +6,7 @@ let servicesChart;
 const adminPage = document.body.dataset.page || 'dashboard';
 let currentServiceFilter = 'all';
 let currentAuditPage = 1;
+let currentTransactionsPage = 1;
 let uploadingFinalInProgress = false;
 
 const SEEN_KEYS = {
@@ -711,6 +712,91 @@ async function loadAudits(page = currentAuditPage) {
   }
 }
 
+
+async function loadDebitTransactions(page = currentTransactionsPage) {
+  currentTransactionsPage = Math.max(1, Number(page) || 1);
+  const res = await fetch(`${apiBase}/admin/debito-transactions?page=${currentTransactionsPage}&per_page=20`, { headers: { Authorization: `Bearer ${authToken}` } });
+  const data = await res.json();
+  const list = document.getElementById('admin-transactions');
+  const pager = document.getElementById('transactions-pagination');
+  const summary = document.getElementById('transactions-summary');
+  const mini = document.getElementById('debit-summary');
+  if (!list) return;
+
+  if (!res.ok) {
+    list.innerHTML = `<p class="muted">${data.message || 'Erro ao carregar transações'}</p>`;
+    if (pager) pager.innerHTML = '';
+    if (summary) summary.textContent = '';
+    if (mini) mini.innerHTML = '';
+    return;
+  }
+
+  const rows = Array.isArray(data.transactions) ? data.transactions : [];
+  const pg = data.pagination || { page: 1, pages: 1, total: rows.length, per_page: 20 };
+  const sums = data.summary || { success: 0, failed: 0, suspicious: 0, pending: 0 };
+
+  if (mini) {
+    mini.innerHTML = `
+      <span class="badge">Sucesso: ${sums.success || 0}</span>
+      <span class="badge">Falha: ${sums.failed || 0}</span>
+      <span class="badge">Pendente: ${sums.pending || 0}</span>
+      <span class="badge" style="background:#b91c1c;color:#fff;">Suspeitas: ${sums.suspicious || 0}</span>
+    `;
+  }
+
+  list.innerHTML = '';
+  rows.forEach((t, idx) => {
+    const item = document.createElement('div');
+    item.className = 'list-item';
+    const globalIndex = ((pg.page - 1) * pg.per_page) + idx + 1;
+    const flags = [];
+    if (t.success) flags.push('<span class="badge" style="background:#065f46;color:#fff;">SUCESSO</span>');
+    if (t.failed) flags.push('<span class="badge" style="background:#991b1b;color:#fff;">FALHA</span>');
+    if (!t.success && !t.failed) flags.push('<span class="badge">PENDENTE</span>');
+    if (t.suspicious) flags.push('<span class="badge" style="background:#b45309;color:#fff;">SUSPEITO</span>');
+    const reasons = Array.isArray(t.suspicious_reasons) && t.suspicious_reasons.length ? ` · sinais: ${t.suspicious_reasons.join(', ')}` : '';
+    item.innerHTML = `
+      <div>
+        <strong>#${globalIndex} · ${t.provider || 'N/A'} · ref: ${t.debito_reference || '—'}</strong>
+        <p class="muted">${t.email || 'anónimo'} · order #${t.order_id || '—'} · invoice #${t.invoice_id || '—'} · ${t.msisdn || '—'} · ${t.amount || '—'} MZN</p>
+        <p class="muted">status: ${t.status || '—'}${reasons}</p>
+      </div>
+      <div>${flags.join(' ')}</div>
+    `;
+    list.appendChild(item);
+  });
+
+  if (summary) {
+    const start = rows.length ? ((pg.page - 1) * pg.per_page + 1) : 0;
+    const end = (pg.page - 1) * pg.per_page + rows.length;
+    summary.textContent = `Página ${pg.page} de ${pg.pages} · itens ${start}-${end} de ${pg.total}`;
+  }
+
+  if (pager) {
+    pager.innerHTML = '';
+    const totalPages = Number(pg.pages) || 1;
+    const current = Number(pg.page) || 1;
+
+    function makeBtn(label, target, active = false) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = active ? 'primary' : 'ghost';
+      b.textContent = label;
+      b.disabled = target < 1 || target > totalPages || target === current;
+      b.addEventListener('click', () => loadDebitTransactions(target));
+      return b;
+    }
+
+    pager.appendChild(makeBtn('«', current - 1));
+    const windowSize = 5;
+    let start = Math.max(1, current - Math.floor(windowSize / 2));
+    let end = Math.min(totalPages, start + windowSize - 1);
+    if (end - start + 1 < windowSize) start = Math.max(1, end - windowSize + 1);
+    for (let i = start; i <= end; i += 1) pager.appendChild(makeBtn(String(i), i, i === current));
+    pager.appendChild(makeBtn('»', current + 1));
+  }
+}
+
 async function loadFeedbackAdmin() {
   const zone = document.getElementById('admin-feedback-list');
   if (!zone) return;
@@ -916,6 +1002,10 @@ switch (adminPage) {
     break;
   case 'audits':
     loadAudits(1);
+    break;
+  case 'transactions':
+    loadDebitTransactions(1);
+    setInterval(() => loadDebitTransactions(currentTransactionsPage), 20000);
     break;
   case 'chat':
     loadAdminChat();

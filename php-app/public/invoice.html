@@ -24,13 +24,14 @@
           <button id="refresh-invoice" type="button">Atualizar</button>
           <button id="back-dashboard" type="button">Voltar</button>
           <button id="download-pdf" type="button">Baixar PDF</button>
+          <button id="start-auto-payment" type="button" class="primary">Pagar agora (M-Pesa/eMola)</button>
         </div>
       </div>
       <div id="invoice-body" class="invoice-box"></div>
     </div>
     <div class="card">
       <h3>Submeter comprovativo</h3>
-      <p class="muted">Envie o recibo de M-Pesa para acelerar a validação.</p>
+      <p class="muted">Pode pagar automaticamente por M-Pesa/eMola ou enviar comprovativo manualmente.</p>
       <form id="proof-form" class="stacked-actions">
         <input type="file" name="comprovativo" id="proof-file" accept="image/*,application/pdf" required />
         <button type="submit" class="primary">Enviar comprovativo</button>

@@ -1,23 +1,6 @@
-
-
 <?php
-// php-app/public/index.php - ADICIONAR NO INÍCIO
-
-// Debug temporário (REMOVA EM PRODUÇÃO)
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
 
 session_start();
-
-// Log da requisição
-file_put_contents(__DIR__ . '/../requests.log', 
-    date('Y-m-d H:i:s') . " - " . 
-    $_SERVER['REQUEST_METHOD'] . " " . 
-    $_SERVER['REQUEST_URI'] . " - " . 
-    json_encode(['POST' => $_POST, 'FILES' => $_FILES]) . "\n", 
-    FILE_APPEND
-);
 
 require __DIR__ . '/../vendor/autoload.php';
 
@@ -48,7 +31,19 @@ $uploadsRoot = realpath(dirname(__DIR__) . '/uploads');
 if ($uploadsRoot && str_starts_with($uri, '/uploads/')) {
     $file = realpath($uploadsRoot . str_replace('..', '', substr($uri, 8)));
     if ($file && is_file($file) && str_starts_with($file, $uploadsRoot)) {
-        header('Content-Type: application/octet-stream');
+        $extension = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+        $mime = match ($extension) {
+            'pdf' => 'application/pdf',
+            'doc' => 'application/msword',
+            'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'txt' => 'text/plain; charset=utf-8',
+            'jpg', 'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+            default => 'application/octet-stream',
+        };
+        header('Content-Type: ' . $mime);
+        header('Content-Length: ' . filesize($file));
+        header('Content-Disposition: inline; filename="' . basename($file) . '"');
         readfile($file);
         return;
     }

@@ -82,9 +82,9 @@ async function loadInvoice() {
       <p><strong>Materiais fornecidos:</strong> ${materials.length ? materials.map((m) => `<a href="${m}" target="_blank">${m.split('/').pop()}</a>`).join(', ') : 'Nenhum'}</p>
       ${order.comprovativo ? `<p class="muted">Comprovativo já enviado: <a href="${order.comprovativo}" target="_blank">abrir</a></p>` : ''}
       <hr />
-      <p><strong>Pagamento M-Pesa</strong></p>
-      <p>Número: 851619970 · Titular: Maria António Chicavele</p>
-      <p class="muted">Após pagar, envie o comprovativo nesta página.</p>
+      <p><strong>Pagamento automático</strong></p>
+      <p>Use o botão "Pagar agora (M-Pesa/eMola)" para receber o pedido de débito no seu número.</p>
+      <p class="muted">Se preferir, também pode pagar manualmente e enviar comprovativo nesta página.</p>
       ${finalFiles.length ? `<p class="success">Documento(s) final(is): ${finalFiles.map((f) => `<a href="${f}" target="_blank">${f.split('/').pop()}</a>`).join(', ')}</p>` : ''}
     `;
   } catch (err) {
@@ -96,6 +96,15 @@ const refreshBtn = document.getElementById('refresh-invoice');
 if (refreshBtn) refreshBtn.onclick = loadInvoice;
 const backBtn = document.getElementById('back-dashboard');
 if (backBtn) backBtn.onclick = () => (window.location.href = '/documents.html');
+
+const autoPayBtn = document.getElementById('start-auto-payment');
+if (autoPayBtn) {
+  autoPayBtn.onclick = () => {
+    if (!requireAuth()) return;
+    window.location.href = `/payment-method.html?id=${orderId}`;
+  };
+}
+
 const pdfBtn = document.getElementById('download-pdf');
 if (pdfBtn) {
   pdfBtn.onclick = async () => {
