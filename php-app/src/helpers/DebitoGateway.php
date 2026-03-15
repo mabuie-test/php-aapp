@@ -10,28 +10,34 @@ class DebitoGateway
         return rtrim((string) Config::get('DEBITO_BASE_URL', 'http://localhost:9000'), '/');
     }
 
-    private static function credentials(): array
+    private static function walletId(): int
     {
-        return [
-            'email' => (string) Config::get('DEBITO_EMAIL', ''),
-            'password' => (string) Config::get('DEBITO_PASSWORD', ''),
-            'wallet_id' => (int) Config::get('DEBITO_WALLET_ID', 0),
-        ];
+        return (int) Config::get('DEBITO_WALLET_ID', 0);
     }
 
-    private static function request(string $method, string $path, ?array $payload = null, ?string $token = null): array
+    private static function bearerToken(): string
     {
+        return trim((string) Config::get('DEBITO_TOKEN', ''));
+    }
+
+    private static function request(string $method, string $path, ?array $payload = null): array
+    {
+        $token = self::bearerToken();
+        if ($token === '') {
+            return ['ok' => false, 'status' => 500, 'data' => null, 'message' => 'Débito API não configurada (DEBITO_TOKEN)'];
+        }
+
         $url = self::baseUrl() . $path;
         $ch = curl_init($url);
-        $headers = ['Accept: application/json'];
+        $headers = [
+            'Accept: application/json',
+            'Authorization: Bearer ' . $token,
+        ];
 
         if ($payload !== null) {
             $json = json_encode($payload);
             $headers[] = 'Content-Type: application/json';
             curl_setopt($ch, CURLOPT_POSTFIELDS, $json);
-        }
-        if ($token) {
-            $headers[] = 'Authorization: Bearer ' . $token;
         }
 
         curl_setopt_array($ch, [
@@ -63,40 +69,15 @@ class DebitoGateway
         ];
     }
 
-    private static function token(): array
+    public static function createC2B(string $provider, string $msisdn, float $amount, string $referenceDescription, ?string $internalNotes = null, ?string $callbackUrl = null): array
     {
-        $cred = self::credentials();
-        if ($cred['email'] === '' || $cred['password'] === '' || $cred['wallet_id'] <= 0) {
-            return ['ok' => false, 'status' => 500, 'message' => 'Débito API não configurada (DEBITO_EMAIL/DEBITO_PASSWORD/DEBITO_WALLET_ID)'];
-        }
-
-        $login = self::request('POST', '/api/v1/login', [
-            'email' => $cred['email'],
-            'password' => $cred['password'],
-        ]);
-
-        if (!$login['ok']) {
-            return ['ok' => false, 'status' => $login['status'] ?: 401, 'message' => $login['message'], 'data' => $login['data'] ?? null];
-        }
-
-        $data = $login['data'] ?? [];
-        $token = $data['token'] ?? $data['access_token'] ?? ($data['data']['token'] ?? null);
-        if (!is_string($token) || $token === '') {
-            return ['ok' => false, 'status' => 500, 'message' => 'Token inválido retornado pela Débito API'];
-        }
-
-        return ['ok' => true, 'status' => 200, 'token' => $token, 'wallet_id' => $cred['wallet_id']];
-    }
-
-    public static function createC2B(string $provider, string $msisdn, float $amount, string $referenceDescription, ?string $internalNotes = null): array
-    {
-        $auth = self::token();
-        if (!$auth['ok']) {
-            return ['ok' => false, 'status' => $auth['status'], 'message' => $auth['message'], 'data' => $auth['data'] ?? null];
+        $walletId = self::walletId();
+        if ($walletId <= 0) {
+            return ['ok' => false, 'status' => 500, 'message' => 'Débito API não configurada (DEBITO_WALLET_ID)', 'data' => null];
         }
 
         $provider = strtolower($provider) === 'emola' ? 'emola' : 'mpesa';
-        $path = '/api/v1/wallets/' . (int) $auth['wallet_id'] . '/c2b/' . $provider;
+        $path = '/api/v1/wallets/' . $walletId . '/c2b/' . $provider;
         $payload = [
             'msisdn' => $msisdn,
             'amount' => $amount,
@@ -106,7 +87,20 @@ class DebitoGateway
         if ($internalNotes !== null && trim($internalNotes) !== '') {
             $payload['internal_notes'] = mb_substr(trim($internalNotes), 0, 255);
         }
+        if ($callbackUrl !== null && trim($callbackUrl) !== '') {
+            $payload['callback_url'] = trim($callbackUrl);
+        }
 
-        return self::request('POST', $path, $payload, $auth['token']);
+        return self::request('POST', $path, $payload);
+    }
+
+    public static function transactionStatus(string $debitoReference): array
+    {
+        $ref = trim($debitoReference);
+        if ($ref === '') {
+            return ['ok' => false, 'status' => 422, 'message' => 'debito_reference inválida', 'data' => null];
+        }
+
+        return self::request('GET', '/api/v1/transactions/' . rawurlencode($ref) . '/status');
     }
 }

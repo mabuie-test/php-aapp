@@ -88,6 +88,10 @@ if (preg_match('#^/api/orders/(\d+)/pdf$#', $uri, $matches) && $method === 'GET'
     OrderController::invoicePdf((int) $matches[1]);
     return;
 }
+if ($uri === '/api/payments/debito/callback' && $method === 'POST') {
+    OrderController::debitCallback();
+    return;
+}
 
 // ROTAS DE AFILIADOS
 if ($uri === '/api/affiliates/summary' && $method === 'GET') {
