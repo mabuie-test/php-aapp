@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1280, initial-scale=1.0" />
+  <title>Ensino à Distância VIP - Livre-se das Tarefas</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body data-page="vip-distance">
+  <div class="footer top-footer-bar">
+    <p class="muted">M-Pesa: 851619970 · Titular Maria António Chicavele · suporte@fluxosoftwares.com</p>
+  </div>
+
+  <header class="topbar">
+    <div class="brand">Livre-se das Tarefas</div>
+    <nav class="navbar">
+      <div class="nav-links">
+        <a href="/index.html">Início</a>
+        <a href="/services.html">Serviços</a>
+        <a href="/order.html">Encomendas</a>
+        <a href="/documents.html" class="auth-only">Documentos</a>
+        <button id="logout" class="ghost auth-only">Terminar sessão</button>
+        <a href="/login.html" class="anon-only">Login</a>
+        <a href="/register.html" class="anon-only">Registo</a>
+      </div>
+    </nav>
+  </header>
+
+  <main class="container" style="max-width:920px;">
+    <section class="card" style="margin-top:1rem;">
+      <h2>🎓 Ensino à Distância VIP</h2>
+      <p class="muted">Auxílio completo por semestre/bloco.</p>
+
+      <p><strong>Escolha o nível de acompanhamento que precisa para o seu semestre ou bloco:</strong></p>
+      <p>⬇️ Clique no botão abaixo</p>
+
+      <div class="card" style="border:1px solid rgba(6,214,160,.4);background:linear-gradient(130deg, rgba(11,99,230,.14), rgba(124,58,237,.12));">
+        <h3>👑 PACOTE VIP SEMESTRAL / BLOCO</h3>
+        <p><strong>Tudo incluso + suporte prioritário</strong></p>
+        <h4>✨ Benefícios do VIP</h4>
+        <ul>
+          <li>✅ Suporte completo via WhatsApp</li>
+          <li>✅ Revisões ilimitadas durante o semestre/bloco</li>
+          <li>✅ Acesso a material exclusivo de estudo</li>
+          <li>✅ Tudo (avaliações, fóruns, trabalho de pesquisa, exames)</li>
+          <li>✅ Boas notas garantidas</li>
+        </ul>
+        <button id="open-vip-form" class="primary">Aderir ao pacote</button>
+      </div>
+
+      <div id="feedback" class="toast"></div>
+
+      <form id="vip-form" class="stacked" style="display:none;margin-top:1rem;">
+        <label>Nome completo</label>
+        <input name="contact_name" required />
+
+        <label>Email</label>
+        <input type="email" name="contact_email" required />
+
+        <label>Instituição de ensino</label>
+        <input name="instituicao" required />
+
+        <label>Número de contacto</label>
+        <input name="contact_phone" required />
+
+        <label>Semestre / Bloco</label>
+        <input name="semestre_bloco" placeholder="Ex.: 2º semestre / Bloco B" required />
+
+        <label>Curso / Área</label>
+        <input name="curso_area" placeholder="Ex.: Administração Pública" />
+
+        <label>Outras informações</label>
+        <textarea name="detalhes" rows="4" placeholder="Descreva disciplinas, prazos, fóruns e necessidades específicas"></textarea>
+
+        <div class="inline-group">
+          <button type="submit" class="primary">Enviar pedido VIP</button>
+          <a class="ghost" href="https://wa.me/258851619970" target="_blank" rel="noopener">Falar no WhatsApp (opcional)</a>
+        </div>
+      </form>
+
+      <div class="quote" style="margin-top:1rem;">
+        <p><strong>Fluxo do pedido:</strong> Enviado → Em análise → Concluído.</p>
+      </div>
+    </section>
+
+    <section class="card" style="margin-top:1rem;">
+      <h3>Meus pedidos VIP</h3>
+      <div id="vip-list" class="list"></div>
+    </section>
+  </main>
+
+  <script src="/upload-utils.js"></script>
+  <script>
+    const apiBase = '/api';
+    let authToken = localStorage.getItem('token') || '';
+
+    function syncNav() {
+      document.querySelectorAll('.anon-only').forEach((el) => (el.style.display = authToken ? 'none' : 'inline-flex'));
+      document.querySelectorAll('.auth-only').forEach((el) => (el.style.display = authToken ? 'inline-flex' : 'none'));
+    }
+
+    function showToast(text) {
+      const zone = document.getElementById('feedback');
+      if (zone) {
+        zone.textContent = text;
+        zone.classList.add('visible');
+        setTimeout(() => zone.classList.remove('visible'), 3500);
+      }
+    }
+
+    function requireAuth() {
+      if (!authToken) {
+        showToast('Faça login para aderir ao pacote VIP.');
+        setTimeout(() => { window.location.href = '/login.html'; }, 650);
+        return false;
+      }
+      return true;
+    }
+
+    document.getElementById('logout')?.addEventListener('click', () => {
+      localStorage.removeItem('token');
+      localStorage.removeItem('role');
+      authToken = '';
+      syncNav();
+      window.location.href = '/login.html';
+    });
+
+    document.getElementById('open-vip-form')?.addEventListener('click', () => {
+      document.getElementById('vip-form').style.display = 'grid';
+      document.getElementById('vip-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    async function loadMyVip() {
+      const box = document.getElementById('vip-list');
+      if (!box) return;
+      if (!authToken) {
+        box.innerHTML = '<p class="muted">Inicie sessão para acompanhar os pedidos VIP.</p>';
+        return;
+      }
+      try {
+        const res = await fetch(`${apiBase}/services`, { headers: { Authorization: `Bearer ${authToken}` } });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Erro ao carregar pedidos');
+        const vip = (data.services || []).filter((s) => (s.categoria || '').includes('Ensino à Distância VIP'));
+        if (!vip.length) {
+          box.innerHTML = '<p class="muted">Ainda sem pedidos VIP.</p>';
+          return;
+        }
+        box.innerHTML = vip.map((s) => `<div class="list-item"><div><strong>${s.categoria}</strong><p class="muted">${s.detalhes || ''}</p></div><span class="badge">${s.status || 'ENVIADO'}</span></div>`).join('');
+      } catch (err) {
+        box.innerHTML = `<p class="muted">${err.message}</p>`;
+      }
+    }
+
+    document.getElementById('vip-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!requireAuth()) return;
+      const form = e.target;
+      const raw = new FormData(form);
+      const payload = new FormData();
+      payload.set('categoria', 'Ensino à Distância VIP');
+      payload.set('contact_name', String(raw.get('contact_name') || ''));
+      payload.set('contact_email', String(raw.get('contact_email') || ''));
+      payload.set('contact_phone', String(raw.get('contact_phone') || ''));
+      payload.set('norma_preferida', 'VIP_SEMESTRAL_BLOCO');
+      payload.set('software_preferido', String(raw.get('instituicao') || ''));
+      const detalhes = [
+        `Instituição: ${raw.get('instituicao') || ''}`,
+        `Semestre/Bloco: ${raw.get('semestre_bloco') || ''}`,
+        `Curso/Área: ${raw.get('curso_area') || ''}`,
+        `Detalhes: ${raw.get('detalhes') || ''}`
+      ].join(' | ');
+      payload.set('detalhes', detalhes);
+
+      const btn = form.querySelector('button[type="submit"]');
+      try {
+        if (btn) btn.disabled = true;
+        const res = await fetch(`${apiBase}/services`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${authToken}` },
+          body: payload
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Erro ao enviar pedido VIP');
+        showToast('Pedido VIP enviado com sucesso. Opcional: contacte no WhatsApp para acompanhamento imediato.');
+        form.reset();
+        form.style.display = 'none';
+        loadMyVip();
+      } catch (err) {
+        showToast(err.message);
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    });
+
+    syncNav();
+    loadMyVip();
+  </script>
+</body>
+</html>

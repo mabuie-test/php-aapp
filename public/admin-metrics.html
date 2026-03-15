@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Métricas - Admin | Livre-se das Tarefas</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body class="page" data-page="metrics">
+  <header class="topbar">
+    <div class="header-content">
+      <div class="logo-container">
+        <div class="logo-icon">L</div>
+        <div>
+          <div class="logo-text">Admin · Métricas</div>
+          <div class="tagline">Gráficos e auditoria</div>
+        </div>
+      </div>
+      <nav class="navbar">
+        <div class="nav-links">
+          <a href="/admin.html">Dashboard</a>
+          <a href="/admin-orders.html">Encomendas</a>
+          <a href="/admin-services.html">Serviços</a>
+          <a href="/admin-users.html">Utilizadores</a>
+          <button id="logout" class="ghost">Terminar sessão</button>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <main class="content grid-two">
+    <section class="card">
+      <h1>📊 Métricas e gráficos</h1>
+      <p id="admin-metrics" class="muted" style="margin-bottom:1rem;">A carregar...</p>
+      
+      <!-- Gráfico redondo (doughnut) – visível e centralizado -->
+      <div style="background: rgba(15,23,42,0.3); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem; display: flex; justify-content: center;">
+        <canvas id="status-chart" style="max-width: 100%; max-height: 240px; width: auto !important; height: auto !important;"></canvas>
+      </div>
+      
+      <div style="background: rgba(15,23,42,0.3); border-radius: 16px; padding: 1rem; margin-bottom: 1.5rem;">
+        <canvas id="revenue-chart" style="max-height: 200px; width:100%;"></canvas>
+      </div>
+      
+      <div style="background: rgba(15,23,42,0.3); border-radius: 16px; padding: 1rem;">
+        <canvas id="services-chart" style="max-height: 200px; width:100%;"></canvas>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>📋 Auditoria</h2>
+      <p class="muted">Logins, pagamentos, uploads e decisões críticas.</p>
+      <div id="admin-audits" class="list" style="max-height: 500px; overflow-y: auto;"></div>
+    </section>
+  
+
+    <section class="card">
+      <h2>🚀 Growth Dashboard</h2>
+      <p class="muted">CAC, ROAS, LTV e conversão por canal (estimados).</p>
+      <div id="growth-dashboard" class="list"></div>
+      <h2 style="margin-top:1rem">🛡️ Sinais Anti-fraude Afiliados</h2>
+      <p class="muted">Deteções automáticas para revisão administrativa.</p>
+      <div id="affiliate-fraud" class="list"></div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <p class="muted">© 2024 Fluxosoftwares · suporte@fluxosoftwares.com</p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="/admin.js"></script>
+  <script>
+    // Garantir que o gráfico redondo seja desenhado após o carregamento dos dados
+    document.addEventListener('DOMContentLoaded', function() {
+      if (typeof window.loadMetrics === 'function') {
+        setTimeout(() => {
+          window.loadMetrics();
+        }, 100);
+      }
+    });
+
+    // Ajuste extra para evitar sobreposição do header (já garantido pelo CSS padding-top)
+    // Forçar recriação do gráfico se necessário
+    window.addEventListener('load', function() {
+      if (window.statusChart) {
+        window.statusChart.update();
+      }
+      if (window.revenueChart) {
+        window.revenueChart.update();
+      }
+      if (window.servicesChart) {
+        window.servicesChart.update();
+      }
+    });
+  </script>
+  <script src="/nav-mobile.js"></script>
+</body>
+</html>

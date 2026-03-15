@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Conversor Voz → Texto</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body class="page tools-page">
+  <header class="topbar">
+    <div class="brand">🎤 Conversor Voz → Texto</div>
+    <nav><a href="/tools.html">Ferramentas</a></nav>
+  </header>
+
+  <main class="tools">
+    <section class="card">
+      <h2>Ditado em tempo real</h2>
+      <p class="muted">Usa a API de reconhecimento de voz do navegador (quando suportada).</p>
+      <div class="inline-group">
+        <button id="voice-start" class="btn btn-primary">Iniciar gravação</button>
+        <button id="voice-stop" class="ghost">Parar</button>
+        <button id="voice-copy" class="ghost">Copiar texto</button>
+      </div>
+      <p id="voice-status" class="muted" style="margin-top:8px">Pronto.</p>
+      <textarea id="voice-output" rows="12" placeholder="A transcrição aparecerá aqui..."></textarea>
+    </section>
+  </main>
+
+  <script>
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const statusEl = document.getElementById('voice-status');
+    const out = document.getElementById('voice-output');
+    let recognition = null;
+    let finalByIndex = [];
+
+    function renderTranscript(interim = '') {
+      const finalText = finalByIndex.filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
+      const interimText = (interim || '').replace(/\s+/g, ' ').trim();
+      out.value = `${finalText}${interimText ? `\n${interimText}` : ''}`.trim();
+    }
+
+    if (!SR) {
+      statusEl.textContent = 'Este navegador não suporta SpeechRecognition. Tente Google Chrome/Edge.';
+      document.getElementById('voice-start').disabled = true;
+      document.getElementById('voice-stop').disabled = true;
+    } else {
+      recognition = new SR();
+      recognition.lang = 'pt-PT';
+      recognition.continuous = true;
+      recognition.interimResults = true;
+
+      recognition.onstart = () => statusEl.textContent = 'A gravar... fale agora.';
+      recognition.onerror = (e) => statusEl.textContent = `Erro: ${e.error}`;
+      recognition.onend = () => statusEl.textContent = 'Parado.';
+      recognition.onresult = (event) => {
+        let interim = '';
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript.trim();
+          if (!transcript) continue;
+
+          if (event.results[i].isFinal) {
+            finalByIndex[i] = transcript;
+          } else {
+            interim += `${transcript} `;
+          }
+        }
+
+        renderTranscript(interim);
+      };
+
+      document.getElementById('voice-start').onclick = () => {
+        if (!out.value.trim()) finalByIndex = [];
+        recognition.start();
+      };
+      document.getElementById('voice-stop').onclick = () => recognition.stop();
+    }
+
+    document.getElementById('voice-copy').onclick = async () => {
+      if (!out.value.trim()) return;
+      try {
+        await navigator.clipboard.writeText(out.value);
+        statusEl.textContent = 'Texto copiado.';
+      } catch (_) {
+        statusEl.textContent = 'Não foi possível copiar automaticamente.';
+      }
+    };
+  </script>
+  <script src="/nav-mobile.js"></script>
+</body>
+</html>

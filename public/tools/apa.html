@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Formatação APA (6/7)</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body class="page tools-page">
+  <header class="topbar">
+    <div class="brand">📚 Formatação APA (6/7)</div>
+    <nav><a href="/tools.html">Ferramentas</a></nav>
+  </header>
+
+  <main class="tools">
+    <section class="card">
+      <h2>Gerador rápido de referência</h2>
+      <div class="cards-grid">
+        <div>
+          <label>Autor(es)</label>
+          <input id="apa-author" placeholder="Ex: Silva, J." />
+        </div>
+        <div>
+          <label>Ano</label>
+          <input id="apa-year" placeholder="Ex: 2024" />
+        </div>
+        <div>
+          <label>Título</label>
+          <input id="apa-title" placeholder="Título da obra" />
+        </div>
+        <div>
+          <label>Fonte / Editora / Revista</label>
+          <input id="apa-source" placeholder="Nome da fonte" />
+        </div>
+        <div>
+          <label>URL (opcional)</label>
+          <input id="apa-url" placeholder="https://..." />
+        </div>
+      </div>
+      <div class="inline-group" style="margin-top:12px">
+        <button id="apa-generate" class="btn btn-primary">Gerar APA</button>
+        <button id="apa-copy" class="ghost">Copiar referência</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h3>Resultado</h3>
+      <div id="apa-output" class="quote">Preencha os campos para gerar.</div>
+      <p class="muted">Modelo simplificado para uso rápido. Ajuste regras específicas conforme tipo de documento.</p>
+    </section>
+  </main>
+
+  <script>
+    const output = document.getElementById('apa-output');
+    function generateApa() {
+      const author = document.getElementById('apa-author').value.trim();
+      const year = document.getElementById('apa-year').value.trim();
+      const title = document.getElementById('apa-title').value.trim();
+      const source = document.getElementById('apa-source').value.trim();
+      const url = document.getElementById('apa-url').value.trim();
+
+      const ref = `${author || '[Autor]'} (${year || 's.d.'}). ${title || '[Título]'}. ${source || '[Fonte]'}.${url ? ` ${url}` : ''}`;
+      output.textContent = ref;
+    }
+
+    document.getElementById('apa-generate').addEventListener('click', generateApa);
+    document.getElementById('apa-copy').addEventListener('click', async () => {
+      const text = output.textContent || '';
+      if (!text) return;
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch (_) {
+        const range = document.createRange();
+        range.selectNodeContents(output);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+    });
+  </script>
+  <script src="/nav-mobile.js"></script>
+</body>
+</html>

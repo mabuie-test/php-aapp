@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Auditoria - Admin</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body class="page" data-page="audits">
+  <header class="topbar">
+    <div class="brand">Admin · Auditoria</div>
+    <nav>
+      <a href="/admin.html">Dashboard</a>
+      <a href="/admin-orders.html">Encomendas</a>
+      <a href="/admin-services.html">Serviços</a>
+      <a href="/admin-users.html">Utilizadores</a>
+      <a href="/admin-metrics.html">Métricas</a>
+      <button id="logout" class="ghost">Terminar sessão</button>
+    </nav>
+  </header>
+  <main class="content">
+    <section class="card">
+      <h1>Auditoria do sistema</h1>
+      <p class="muted">Logs agrupados em 20 por página. Use os índices numéricos para navegar.</p>
+      <div id="admin-audits" class="list"></div>
+      <div class="inline-group" id="audit-pagination" style="margin-top:1rem;flex-wrap:wrap;"></div>
+      <p id="audit-summary" class="muted" style="margin-top:0.7rem;"></p>
+    </section>
+  </main>
+  <footer class="footer"><p class="muted">© 2024 Fluxosoftwares</p></footer>
+  <script src="/admin.js"></script>
+  <script src="/nav-mobile.js"></script>
+</body>
+</html>

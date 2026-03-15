@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin - Leads de Marketing</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body class="page admin-page">
+  <header>
+    <div class="header-content">
+      <div class="logo-container">
+        <div class="logo-icon">L</div>
+        <div>
+          <div class="logo-text">Painel Admin</div>
+          <div class="tagline">Leads captados via marketing</div>
+        </div>
+      </div>
+      <nav class="navbar">
+        <div class="nav-links">
+          <a href="/admin.html">Dashboard</a>
+          <a href="/admin-metrics.html">Métricas</a>
+          <button id="logout" class="ghost">Sair</button>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <main class="content">
+    <section class="card">
+      <div class="split">
+        <div>
+          <h2>Leads de Marketing</h2>
+          <p class="muted">Leads do formulário de captação com filtros server-side e exportação CSV.</p>
+        </div>
+        <div class="inline-group">
+          <input id="lead-search" placeholder="Pesquisar nome/email/telefone" />
+          <select id="lead-source"><option value="">Todas as fontes</option></select>
+          <select id="lead-interest"><option value="">Todos os interesses</option></select>
+          <button id="lead-refresh" class="ghost">Atualizar</button>
+          <button id="lead-export" class="ghost">Exportar CSV</button>
+        </div>
+      </div>
+
+      <div id="lead-kpis" class="grid metrics" style="margin-top:1rem"></div>
+      <div id="lead-list" class="list" style="margin-top:1rem"></div>
+
+      <div class="inline-group" style="margin-top:1rem;justify-content:space-between">
+        <button id="lead-prev" class="ghost">← Anterior</button>
+        <span id="lead-page-info" class="muted"></span>
+        <button id="lead-next" class="ghost">Próxima →</button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const apiBase = '/api';
+    const token = localStorage.getItem('token') || '';
+    if (!token) window.location.href = '/login.html';
+
+    document.getElementById('logout')?.addEventListener('click', () => {
+      localStorage.removeItem('token');
+      localStorage.removeItem('role');
+      window.location.href = '/login.html';
+    });
+
+    const state = {
+      page: 1,
+      perPage: 20,
+      totalPages: 1,
+      total: 0,
+      leads: [],
+      allSources: [],
+      allInterests: [],
+    };
+
+    function qp() {
+      const q = (document.getElementById('lead-search')?.value || '').trim();
+      const source = (document.getElementById('lead-source')?.value || '').trim();
+      const interest = (document.getElementById('lead-interest')?.value || '').trim();
+      const params = new URLSearchParams({
+        page: String(state.page),
+        per_page: String(state.perPage),
+      });
+      if (q) params.set('q', q);
+      if (source) params.set('source', source);
+      if (interest) params.set('interest', interest);
+      return params.toString();
+    }
+
+    function fillFilters() {
+      const sourceSel = document.getElementById('lead-source');
+      const intSel = document.getElementById('lead-interest');
+      const currSource = sourceSel.value;
+      const currInterest = intSel.value;
+
+      sourceSel.innerHTML = '<option value="">Todas as fontes</option>';
+      state.allSources.forEach((s) => {
+        const opt = document.createElement('option');
+        opt.value = s.source || '';
+        opt.textContent = `${s.source || 'desconhecida'} (${s.total})`;
+        sourceSel.appendChild(opt);
+      });
+      sourceSel.value = currSource;
+
+      intSel.innerHTML = '<option value="">Todos os interesses</option>';
+      state.allInterests.forEach((i) => {
+        const opt = document.createElement('option');
+        opt.value = i.interest || '';
+        opt.textContent = `${i.interest || 'não definido'} (${i.total})`;
+        intSel.appendChild(opt);
+      });
+      intSel.value = currInterest;
+    }
+
+    function render() {
+      const kpis = document.getElementById('lead-kpis');
+      const list = document.getElementById('lead-list');
+      const pageInfo = document.getElementById('lead-page-info');
+
+      const uniqueEmails = new Set(state.leads.map((l) => l.email).filter(Boolean)).size;
+      const topSource = state.allSources[0]?.source || '—';
+
+      kpis.innerHTML = `
+        <div><p class="muted">Leads nesta página</p><h4>${state.leads.length}</h4></div>
+        <div><p class="muted">Total geral</p><h4>${state.total}</h4></div>
+        <div><p class="muted">Emails únicos (página)</p><h4>${uniqueEmails}</h4></div>
+        <div><p class="muted">Fonte principal</p><h4>${topSource}</h4></div>
+      `;
+
+      list.innerHTML = '';
+      if (!state.leads.length) {
+        list.innerHTML = '<div class="muted">Sem leads para os filtros atuais.</div>';
+      } else {
+        state.leads.forEach((lead) => {
+          const item = document.createElement('div');
+          item.className = 'list-item';
+          item.innerHTML = `
+            <div>
+              <strong>${lead.name || '—'}</strong>
+              <p class="muted">${lead.email || 'sem email'} ${lead.phone ? ' · ' + lead.phone : ''}</p>
+              <p class="muted">Interesse: ${lead.interest || '—'} · Fonte: ${lead.source || '—'}</p>
+            </div>
+            <span class="badge">${lead.created_at || ''}</span>
+          `;
+          list.appendChild(item);
+        });
+      }
+
+      pageInfo.textContent = `Página ${state.page} de ${state.totalPages} · ${state.total} registos`;
+      document.getElementById('lead-prev').disabled = state.page <= 1;
+      document.getElementById('lead-next').disabled = state.page >= state.totalPages;
+    }
+
+    async function loadLeads() {
+      const res = await fetch(`${apiBase}/admin/marketing/leads?${qp()}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Erro ao carregar leads');
+
+      state.leads = data.leads || [];
+      state.total = Number(data.pagination?.total || 0);
+      state.totalPages = Math.max(1, Number(data.pagination?.total_pages || 1));
+      state.page = Math.max(1, Number(data.pagination?.page || 1));
+      state.allSources = data.sources || [];
+      state.allInterests = data.interests || [];
+
+      fillFilters();
+      render();
+    }
+
+    async function exportCsv() {
+      const rows = [['nome','email','telefone','interesse','fonte','data']];
+      for (let page = 1; page <= state.totalPages; page++) {
+        const params = new URLSearchParams(qp());
+        params.set('page', String(page));
+        const res = await fetch(`${apiBase}/admin/marketing/leads?${params.toString()}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+        (data.leads || []).forEach((l) => {
+          rows.push([l.name, l.email, l.phone, l.interest, l.source, l.created_at]);
+        });
+      }
+
+      const csv = rows.map((r) => r.map((c) => '"' + String(c || '').replace(/"/g, '""') + '"').join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'leads-marketing.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    document.getElementById('lead-refresh')?.addEventListener('click', () => {
+      state.page = 1;
+      loadLeads().catch((e) => alert(e.message));
+    });
+
+    document.getElementById('lead-search')?.addEventListener('input', () => {
+      state.page = 1;
+      loadLeads().catch((e) => alert(e.message));
+    });
+
+    document.getElementById('lead-source')?.addEventListener('change', () => {
+      state.page = 1;
+      loadLeads().catch((e) => alert(e.message));
+    });
+
+    document.getElementById('lead-interest')?.addEventListener('change', () => {
+      state.page = 1;
+      loadLeads().catch((e) => alert(e.message));
+    });
+
+    document.getElementById('lead-prev')?.addEventListener('click', () => {
+      if (state.page <= 1) return;
+      state.page -= 1;
+      loadLeads().catch((e) => alert(e.message));
+    });
+
+    document.getElementById('lead-next')?.addEventListener('click', () => {
+      if (state.page >= state.totalPages) return;
+      state.page += 1;
+      loadLeads().catch((e) => alert(e.message));
+    });
+
+    document.getElementById('lead-export')?.addEventListener('click', () => exportCsv().catch((e) => alert(e.message)));
+
+    loadLeads().catch((e) => alert(e.message));
+  </script>
+  <script src="/nav-mobile.js"></script>
+</body>
+</html>

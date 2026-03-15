@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>As Minhas Notas</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body class="page tools-page">
+  <header class="topbar">
+    <div class="brand">📒 As Minhas Notas</div>
+    <nav><a href="/tools.html">Ferramentas</a></nav>
+  </header>
+
+  <main class="tools">
+    <section class="card">
+      <h2>Notas rápidas</h2>
+      <p class="muted">As notas ficam guardadas no teu navegador (localStorage).</p>
+      <label for="note-title">Título</label>
+      <input id="note-title" placeholder="Ex: Ideias para o trabalho" />
+      <label for="note-body">Conteúdo</label>
+      <textarea id="note-body" rows="8" placeholder="Escreve aqui..."></textarea>
+      <div class="inline-group">
+        <button class="btn btn-primary" id="save-note">Guardar nota</button>
+        <button class="ghost" id="clear-note">Limpar campos</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h3>Notas guardadas</h3>
+      <div id="notes-list" class="list"></div>
+    </section>
+  </main>
+
+  <script>
+    const KEY = 'internal_tools_notes_v1';
+    const list = document.getElementById('notes-list');
+
+    function readNotes() {
+      try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch { return []; }
+    }
+
+    function writeNotes(notes) {
+      localStorage.setItem(KEY, JSON.stringify(notes));
+    }
+
+    function render() {
+      const notes = readNotes();
+      list.innerHTML = '';
+      if (!notes.length) {
+        list.innerHTML = '<p class="muted">Ainda sem notas.</p>';
+        return;
+      }
+      notes.forEach((n, i) => {
+        const row = document.createElement('div');
+        row.className = 'list-item';
+        row.innerHTML = `<div><strong>${n.title || 'Sem título'}</strong><p class="muted">${(n.body || '').slice(0, 120)}</p></div>`;
+        const actions = document.createElement('div');
+        actions.className = 'inline-group';
+        const edit = document.createElement('button');
+        edit.className = 'ghost';
+        edit.textContent = 'Editar';
+        edit.onclick = () => {
+          document.getElementById('note-title').value = n.title || '';
+          document.getElementById('note-body').value = n.body || '';
+          notes.splice(i, 1);
+          writeNotes(notes);
+          render();
+        };
+        const del = document.createElement('button');
+        del.className = 'ghost';
+        del.textContent = 'Apagar';
+        del.onclick = () => {
+          notes.splice(i, 1);
+          writeNotes(notes);
+          render();
+        };
+        actions.appendChild(edit);
+        actions.appendChild(del);
+        row.appendChild(actions);
+        list.appendChild(row);
+      });
+    }
+
+    document.getElementById('save-note').addEventListener('click', () => {
+      const title = document.getElementById('note-title').value.trim();
+      const body = document.getElementById('note-body').value.trim();
+      if (!title && !body) return;
+      const notes = readNotes();
+      notes.unshift({ title, body, created_at: new Date().toISOString() });
+      writeNotes(notes);
+      document.getElementById('note-title').value = '';
+      document.getElementById('note-body').value = '';
+      render();
+    });
+
+    document.getElementById('clear-note').addEventListener('click', () => {
+      document.getElementById('note-title').value = '';
+      document.getElementById('note-body').value = '';
+    });
+
+    render();
+  </script>
+  <script src="/nav-mobile.js"></script>
+</body>
+</html>

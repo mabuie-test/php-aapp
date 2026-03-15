@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin · Campanhas de Email</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body class="page" data-page="promotions">
+  <header class="topbar">
+    <div class="header-content">
+      <div class="logo-container">
+        <div class="logo-icon">L</div>
+        <div>
+          <div class="logo-text">Admin · Campanhas</div>
+          <div class="tagline">Envio massivo de emails promocionais</div>
+        </div>
+      </div>
+      <nav class="navbar">
+        <div class="nav-links">
+          <a href="/admin.html">Dashboard</a>
+          <a href="/admin-leads.html">Leads</a>
+          <a href="/admin-metrics.html">Métricas</a>
+          <button id="logout" class="ghost">Sair</button>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <main class="content grid-two">
+    <section class="card">
+      <h1>📣 Campanha promocional</h1>
+      <p class="muted">Usa as credenciais de email configuradas no <code>.env</code> (PHPMailer).</p>
+      <form id="promo-form" class="stacked">
+        <label>Assunto</label>
+        <input id="promo-subject" name="subject" required placeholder="Ex: Oferta de fim de semana" />
+
+        <label>Mensagem HTML</label>
+        <textarea id="promo-html" name="html" rows="10" required placeholder="<h2>Promoção</h2><p>...</p>"></textarea>
+
+        <div class="inline-group">
+          <label><input id="promo-include-admins" type="checkbox" /> Incluir admins</label>
+          <label>Máx. destinatários <input id="promo-max" type="number" min="1" max="1000" value="500" /></label>
+        </div>
+
+        <div class="inline-group">
+          <input id="promo-test-email" type="email" placeholder="email de teste (opcional)" />
+          <button id="promo-send" class="primary" type="submit">Enviar campanha</button>
+          <button id="promo-refresh" class="ghost" type="button">Atualizar lista</button>
+        </div>
+      </form>
+      <div id="promo-result" class="muted" style="margin-top:10px"></div>
+    </section>
+
+    <section class="card">
+      <h2>👥 Destinatários</h2>
+      <p id="promo-count" class="muted">A carregar...</p>
+      <div id="promo-recipients" class="list"></div>
+      <h3 style="margin-top:1rem">Histórico recente</h3>
+      <div id="promo-history" class="list"></div>
+    </section>
+  </main>
+
+  <footer class="footer"><p class="muted">© 2024 Fluxosoftwares</p></footer>
+
+  <script src="/upload-utils.js"></script>
+  <script src="/admin.js"></script>
+  <script src="/nav-mobile.js"></script>
+</body>
+</html>
