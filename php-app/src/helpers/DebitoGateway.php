@@ -32,26 +32,6 @@ class DebitoGateway
         return (int) Config::get($specificKey, 0);
     }
 
-    private static function walletCandidates(string $provider): array
-    {
-        $provider = self::normalizedProvider($provider);
-        $primary = self::walletId($provider);
-        $secondary = self::walletId($provider === 'emola' ? 'mpesa' : 'emola');
-        return array_values(array_unique(array_filter([(int) $primary, (int) $secondary], fn ($n) => $n > 0)));
-    }
-
-    private static function looksLikeWalletTypeMismatch(array $res): bool
-    {
-        $message = strtoupper((string) ($res['message'] ?? ''));
-        $data = is_array($res['data'] ?? null) ? $res['data'] : [];
-        $raw = strtoupper((string) ($data['raw'] ?? ''));
-        $error = strtoupper((string) ($data['error'] ?? ''));
-        $all = $message . ' ' . $raw . ' ' . $error;
-
-        return (str_contains($all, 'CARTEIRA') || str_contains($all, 'WALLET'))
-            && (str_contains($all, 'EMOLA') || str_contains($all, 'MPESA') || str_contains($all, 'M-PESA'));
-    }
-
     private static function bearerToken(): string
     {
         return trim((string) Config::get('DEBITO_TOKEN', ''));
@@ -139,12 +119,12 @@ class DebitoGateway
     public static function createC2B(string $provider, string $msisdn, float $amount, string $referenceDescription, ?string $internalNotes = null, ?string $callbackUrl = null): array
     {
         $provider = self::normalizedProvider($provider);
-        $walletCandidates = self::walletCandidates($provider);
-        if (empty($walletCandidates)) {
+        $walletId = self::walletId($provider);
+        if ($walletId <= 0) {
             return ['ok' => false, 'status' => 500, 'message' => 'Débito API não configurada (DEBITO_WALLET_ID_MPESA/DEBITO_WALLET_ID_EMOLA)', 'data' => null];
         }
 
-        $basePayload = [
+        $payload = [
             'msisdn' => $msisdn,
             'amount' => $amount,
             'reference_description' => mb_substr($referenceDescription, 0, 100),
@@ -152,7 +132,6 @@ class DebitoGateway
 
         // eMola: seguir estritamente o formato validado no curl (payload mínimo).
         // M-Pesa: mantém campos opcionais quando disponíveis.
-        $payload = $basePayload;
         if ($provider !== 'emola') {
             if ($internalNotes !== null && trim($internalNotes) !== '') {
                 $payload['internal_notes'] = mb_substr(trim($internalNotes), 0, 255);
@@ -162,34 +141,19 @@ class DebitoGateway
             }
         }
 
-        $last = null;
-        foreach ($walletCandidates as $idx => $walletId) {
-            $path = '/api/v1/wallets/' . $walletId . '/c2b/' . $provider;
-            $res = self::request('POST', $path, $payload);
+        $path = '/api/v1/wallets/' . $walletId . '/c2b/' . $provider;
+        $res = self::request('POST', $path, $payload);
 
-            if (!is_array($res['data'] ?? null)) {
-                $res['data'] = [];
-            }
-            $res['data']['_request_wallet_id'] = (int) $walletId;
-            $res['data']['_request_provider'] = $provider;
-            if ($provider === 'emola') {
-                $res['data']['_request_payload_mode'] = 'minimal';
-            }
-            if ($idx > 0) {
-                $res['data']['_request_wallet_fallback_used'] = true;
-            }
-
-            if ($res['ok']) {
-                return $res;
-            }
-
-            $last = $res;
-            if (!self::looksLikeWalletTypeMismatch($res)) {
-                break;
-            }
+        if (!is_array($res['data'] ?? null)) {
+            $res['data'] = [];
+        }
+        $res['data']['_request_wallet_id'] = (int) $walletId;
+        $res['data']['_request_provider'] = $provider;
+        if ($provider === 'emola') {
+            $res['data']['_request_payload_mode'] = 'minimal';
         }
 
-        return $last ?? ['ok' => false, 'status' => 502, 'message' => 'Falha ao iniciar transação Débito', 'data' => null];
+        return $res;
     }
 
     public static function transactionStatus(string $debitoReference): array
