@@ -45,6 +45,19 @@ function applyMsisdnConstraints() {
   }
 }
 
+
+function setPaymentLocked(message, type = 'info') {
+  const options = document.querySelectorAll('.payment-card');
+  options.forEach((btn) => {
+    btn.disabled = true;
+    btn.classList.remove('active');
+  });
+  const formCard = document.getElementById('payment-form-card');
+  if (formCard) formCard.classList.add('hidden');
+  selectedMethod = '';
+  setResult(message, type);
+}
+
 function setResult(message, type = 'info') {
   const el = document.getElementById('payment-result');
   if (!el) return;
@@ -62,6 +75,15 @@ async function loadOrder() {
   }
 
   orderData = data.order;
+  const invoiceStatus = String(orderData.invoice_estado || '').toUpperCase();
+  if (invoiceStatus === 'PAGA') {
+    setPaymentLocked('Esta fatura já está paga. Não é necessário iniciar novo débito.', 'success');
+    return;
+  }
+  if (invoiceStatus === 'PAGAMENTO_EM_VALIDACAO') {
+    setPaymentLocked('Já existe um pagamento em validação para esta fatura. Aguarde a confirmação automática.', 'info');
+    return;
+  }
   const amountField = document.getElementById('payment-amount');
   if (amountField) {
     amountField.value = String(orderData.valor_total || data.invoice_details?.valor_total || '').replace(',', '.');
@@ -119,6 +141,11 @@ async function waitPaymentConfirmation(debitoReference) {
     }
 
     const normalized = String(data.status || '').toUpperCase();
+    if (['SUCCESS', 'SUCCEEDED', 'COMPLETED', 'APPROVED'].includes(normalized)) {
+      setResult('Pagamento confirmado com sucesso. A redirecionar para faturas...', 'success');
+      setTimeout(() => { window.location.href = `/invoice.html?id=${orderId}`; }, 1200);
+      return true;
+    }
     if (['FAILED', 'REJECTED', 'CANCELLED', 'DECLINED', 'ERROR'].includes(normalized)) {
       setResult(`Pagamento não concluído (${normalized}). Tente novamente ou contacte o suporte.`, 'error');
       return false;

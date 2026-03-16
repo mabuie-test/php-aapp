@@ -141,9 +141,15 @@ class DebitoGateway
 
         $res = self::request('POST', $path, $payload);
 
-        // Compatibilidade: alguns provedores/wallets rejeitam campos opcionais;
-        // nesses casos tentamos novamente com o payload mínimo (como no curl oficial).
-        if (!$res['ok'] && ($payload !== $basePayload)) {
+        // Compatibilidade eMola: alguns cenários rejeitam campos opcionais;
+        // nesses casos tentamos novamente com payload mínimo (como no curl validado).
+        $errorText = strtoupper((string) ($res['message'] ?? ''));
+        $errorRaw = strtoupper((string) (($res['data']['raw'] ?? '') ?: ($res['data']['error'] ?? '')));
+        $looksLikeOptionalFieldRejection =
+            str_contains($errorText, 'CALLBACK') || str_contains($errorText, 'INTERNAL') || str_contains($errorText, 'OPTIONAL') ||
+            str_contains($errorRaw, 'CALLBACK') || str_contains($errorRaw, 'INTERNAL_NOTES') || str_contains($errorRaw, 'FIELD');
+
+        if (!$res['ok'] && $provider === 'emola' && ($payload !== $basePayload) && $looksLikeOptionalFieldRejection) {
             $res = self::request('POST', $path, $basePayload);
             if (!is_array($res['data'] ?? null)) {
                 $res['data'] = [];
