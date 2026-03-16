@@ -125,43 +125,33 @@ class DebitoGateway
         }
 
         $path = '/api/v1/wallets/' . $walletId . '/c2b/' . $provider;
-        $basePayload = [
+        $payload = [
             'msisdn' => $msisdn,
             'amount' => $amount,
             'reference_description' => mb_substr($referenceDescription, 0, 100),
         ];
-        $payload = $basePayload;
 
-        if ($internalNotes !== null && trim($internalNotes) !== '') {
-            $payload['internal_notes'] = mb_substr(trim($internalNotes), 0, 255);
-        }
-        if ($callbackUrl !== null && trim($callbackUrl) !== '') {
-            $payload['callback_url'] = trim($callbackUrl);
+        // eMola: seguir estritamente o formato validado no curl (payload mínimo).
+        // M-Pesa: mantém campos opcionais quando disponíveis.
+        if ($provider !== 'emola') {
+            if ($internalNotes !== null && trim($internalNotes) !== '') {
+                $payload['internal_notes'] = mb_substr(trim($internalNotes), 0, 255);
+            }
+            if ($callbackUrl !== null && trim($callbackUrl) !== '') {
+                $payload['callback_url'] = trim($callbackUrl);
+            }
         }
 
         $res = self::request('POST', $path, $payload);
-
-        // Compatibilidade eMola: alguns cenários rejeitam campos opcionais;
-        // nesses casos tentamos novamente com payload mínimo (como no curl validado).
-        $errorText = strtoupper((string) ($res['message'] ?? ''));
-        $errorRaw = strtoupper((string) (($res['data']['raw'] ?? '') ?: ($res['data']['error'] ?? '')));
-        $looksLikeOptionalFieldRejection =
-            str_contains($errorText, 'CALLBACK') || str_contains($errorText, 'INTERNAL') || str_contains($errorText, 'OPTIONAL') ||
-            str_contains($errorRaw, 'CALLBACK') || str_contains($errorRaw, 'INTERNAL_NOTES') || str_contains($errorRaw, 'FIELD');
-
-        if (!$res['ok'] && $provider === 'emola' && ($payload !== $basePayload) && $looksLikeOptionalFieldRejection) {
-            $res = self::request('POST', $path, $basePayload);
-            if (!is_array($res['data'] ?? null)) {
-                $res['data'] = [];
-            }
-            $res['data']['_request_retry_without_optional_fields'] = true;
-        }
 
         if (!is_array($res['data'] ?? null)) {
             $res['data'] = [];
         }
         $res['data']['_request_wallet_id'] = $walletId;
         $res['data']['_request_provider'] = $provider;
+        if ($provider === 'emola') {
+            $res['data']['_request_payload_mode'] = 'minimal';
+        }
         return $res;
     }
 
